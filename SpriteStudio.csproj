@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>SpriteStudio</AssemblyName>
+    <RootNamespace>SpriteStudio</RootNamespace>
+    <ApplicationIcon>Assets\SpriteStudio.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="config/versions.xml" Link="Config/versions.xml" />
+    <Resource Include="Assets\SpriteStudio.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="SharpCompress" Version="0.50.4" />
+    <None Update="ThirdPartyNotices.txt" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

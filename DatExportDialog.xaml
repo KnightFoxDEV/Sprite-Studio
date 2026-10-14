@@ -1,0 +1,82 @@
+<Window x:Class="SpriteStudio.DatExportDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Exportar" Icon="Assets/SpriteStudio.png" Width="535" Height="600" MinWidth="500" MinHeight="560"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize" ShowInTaskbar="False"
+        Background="{DynamicResource AppBackground}" Foreground="{DynamicResource TextBrush}"
+        FontFamily="Segoe UI" FontSize="12" Loaded="Dialog_Loaded">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <TextBlock Text="Nome:" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,5" />
+                <TextBox x:Name="NameInput" Height="30" Padding="8,5" />
+
+                <TextBlock Text="Pasta de destino:" Foreground="{DynamicResource MutedBrush}" Margin="0,14,0,5" />
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="82" /></Grid.ColumnDefinitions>
+                    <TextBox x:Name="FolderInput" Grid.Column="0" Height="30" Padding="8,5" VerticalContentAlignment="Center" />
+                    <Button Grid.Column="1" Content="Procurar" Click="BrowseButton_Click" Margin="8,0,0,0" Padding="8,4" />
+                </Grid>
+
+                <TextBlock x:Name="CategoryLabel" Text="Categoria" Foreground="{DynamicResource MutedBrush}" Margin="0,14,0,5" />
+                <ComboBox x:Name="CategoryCombo" Height="30" SelectionChanged="CategoryCombo_SelectionChanged">
+                    <ComboBoxItem Content="Itens" Tag="item" />
+                    <ComboBoxItem Content="Outfits" Tag="outfit" />
+                    <ComboBoxItem Content="Efeitos" Tag="effect" />
+                    <ComboBoxItem Content="Projéteis" Tag="missile" />
+                </ComboBox>
+
+                <GroupBox x:Name="ExportRangeGroup" Header="Faixa de exportação" Margin="0,12,0,0" Padding="10,7" BorderBrush="{DynamicResource BorderBrush}" Foreground="{DynamicResource MutedBrush}">
+                    <StackPanel>
+                        <CheckBox x:Name="UseRangeCheckBox" Content="Usar faixa" Foreground="{DynamicResource TextBrush}" Checked="UseRangeCheckBox_Changed" Unchecked="UseRangeCheckBox_Changed" />
+                        <StackPanel x:Name="RangeInputsPanel" Orientation="Horizontal" Margin="0,8,0,0" VerticalAlignment="Center">
+                            <TextBlock x:Name="RangeFromLabel" Text="De:" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                            <TextBox x:Name="RangeFromInput" Width="72" Height="27" Text="0" VerticalContentAlignment="Center" />
+                            <TextBlock x:Name="RangeToLabel" Text="Até:" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center" Margin="12,0,6,0" />
+                            <TextBox x:Name="RangeToInput" Width="88" Height="27" Text="0" VerticalContentAlignment="Center" />
+                            <Button x:Name="MaxRangeButton" Content="MAX" Click="MaxRangeButton_Click" Margin="8,0,0,0" Padding="9,4" />
+                        </StackPanel>
+                    </StackPanel>
+                </GroupBox>
+
+                <GroupBox Header="Formato" Margin="0,15,0,0" Padding="10,7" BorderBrush="{DynamicResource BorderBrush}" Foreground="{DynamicResource MutedBrush}">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <RadioButton x:Name="PngRadio" Content="PNG" GroupName="ExportFormat" IsChecked="True" Checked="FormatRadio_Checked" Foreground="{DynamicResource TextBrush}" Margin="0,0,22,0" />
+                        <RadioButton x:Name="BmpRadio" Content="BMP" GroupName="ExportFormat" Checked="FormatRadio_Checked" Foreground="{DynamicResource TextBrush}" Margin="0,0,22,0" />
+                        <RadioButton x:Name="JpgRadio" Content="JPG" GroupName="ExportFormat" Checked="FormatRadio_Checked" Foreground="{DynamicResource TextBrush}" Margin="0,0,22,0" />
+                        <RadioButton x:Name="ObdRadio" Content="OBD" GroupName="ExportFormat" Checked="FormatRadio_Checked" Foreground="{DynamicResource TextBrush}" />
+                    </StackPanel>
+                </GroupBox>
+
+                <GroupBox Header="Opções" Margin="0,12,0,0" Padding="12,8" BorderBrush="{DynamicResource BorderBrush}" Foreground="{DynamicResource MutedBrush}">
+                    <Grid MinHeight="68">
+                        <StackPanel x:Name="PngOptions" Orientation="Horizontal" VerticalAlignment="Center">
+                            <CheckBox x:Name="TransparentBackgroundCheck" Content="Fundo transparente" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <StackPanel x:Name="JpgOptions" Orientation="Horizontal" VerticalAlignment="Center" Visibility="Collapsed">
+                            <TextBlock Text="Qualidade:" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                            <Slider x:Name="JpgQualitySlider" Width="175" Minimum="10" Maximum="100" Value="100" TickFrequency="5" IsSnapToTickEnabled="True" ValueChanged="JpgQualitySlider_ValueChanged" />
+                            <TextBlock x:Name="JpgQualityText" Text="100%" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center" Margin="10,0,0,0" />
+                        </StackPanel>
+                        <Grid x:Name="ObdOptions" Visibility="Collapsed" VerticalAlignment="Center">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="150" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="100" /></Grid.ColumnDefinitions>
+                            <TextBlock Text="Versão:" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center" Margin="0,0,9,0" />
+                            <ComboBox x:Name="VersionCombo" Grid.Column="1" Height="30" DisplayMemberPath="Name" />
+                            <TextBlock Text="OBD:" Grid.Column="2" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center" Margin="18,0,9,0" />
+                            <ComboBox x:Name="ObdVersionCombo" Grid.Column="3" Height="30" DisplayMemberPath="Label" />
+                        </Grid>
+                    </Grid>
+                </GroupBox>
+                <TextBlock x:Name="ValidationText" Foreground="{DynamicResource SoftErrorBrush}" FontSize="11" Margin="2,10,0,0" TextWrapping="Wrap" />
+            </StackPanel>
+        </ScrollViewer>
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
+            <Button Content="Confirmar" Click="ConfirmButton_Click" Style="{StaticResource PrimaryButton}" MinWidth="92" Margin="0,0,8,0" />
+            <Button Content="Cancelar" Click="CancelButton_Click" MinWidth="82" />
+        </StackPanel>
+    </Grid>
+</Window>

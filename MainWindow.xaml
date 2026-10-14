@@ -1,0 +1,715 @@
+<Window x:Class="SpriteStudio.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+        Title="Sprite Studio" Icon="Assets/SpriteStudio.png" Width="1500" Height="820" MinWidth="1240" MinHeight="680" WindowStartupLocation="CenterScreen"
+        WindowStyle="None" ResizeMode="CanResize" StateChanged="MainWindow_StateChanged"
+        Background="{DynamicResource AppBackground}" Foreground="{DynamicResource TextBrush}"
+        FontFamily="Segoe UI" AllowDrop="True" Drop="Window_Drop" DragOver="Window_DragOver" PreviewKeyDown="MainWindow_PreviewKeyDown">
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="34" ResizeBorderThickness="6" GlassFrameThickness="0" CornerRadius="0" UseAeroCaptionButtons="False" />
+    </shell:WindowChrome.WindowChrome>
+    <Window.Resources>
+        <Style x:Key="WindowCaptionButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="46" />
+            <Setter Property="Height" Value="34" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="ButtonSurface" Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ButtonSurface" Property="Background" Value="{DynamicResource ButtonHoverBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="ButtonSurface" Property="Background" Value="{DynamicResource ComboSelectedBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="34" />
+            <RowDefinition Height="48" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Background="{DynamicResource PanelBackground}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0" IsHitTestVisible="False">
+                    <Image Source="Assets/SpriteStudio.png" Width="16" Height="16" Stretch="Uniform" Margin="0,0,8,0" />
+                    <TextBlock Text="Sprite Studio" Foreground="{DynamicResource TextBrush}" FontSize="11" VerticalAlignment="Center" />
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Stretch">
+                    <Button x:Name="MinimizeWindowButton" Style="{StaticResource WindowCaptionButtonStyle}" Click="MinimizeWindowButton_Click" ToolTip="Minimizar"
+                            shell:WindowChrome.IsHitTestVisibleInChrome="True">
+                        <TextBlock Text="—" Foreground="#67B7FF" FontSize="15" FontWeight="SemiBold" Margin="0,-5,0,0" />
+                    </Button>
+                    <Button x:Name="MaximizeWindowButton" Style="{StaticResource WindowCaptionButtonStyle}" Click="MaximizeWindowButton_Click" ToolTip="Maximizar"
+                            shell:WindowChrome.IsHitTestVisibleInChrome="True">
+                        <TextBlock Text="□" Foreground="#A8E879" FontSize="14" FontWeight="SemiBold" />
+                    </Button>
+                    <Button x:Name="CloseWindowButton" Style="{StaticResource WindowCaptionButtonStyle}" Click="CloseWindowButton_Click" ToolTip="Fechar"
+                            shell:WindowChrome.IsHitTestVisibleInChrome="True">
+                        <TextBlock Text="×" Foreground="#FF6868" FontSize="21" FontWeight="Light" Margin="0,-2,0,0" />
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="1" Background="{DynamicResource PanelBackground}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="250" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="14,0">
+                    <Border Width="27" Height="27" CornerRadius="8" Background="{DynamicResource AccentBrush}" Margin="0,0,9,0">
+                        <TextBlock Text="✦" Foreground="{DynamicResource AccentTextBrush}" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="SPRITE STUDIO" FontWeight="Bold" FontSize="11" />
+                        <TextBlock x:Name="BrandSubtitle" Text="Editor de sprites para Tibia" FontSize="9" Foreground="{DynamicResource MutedBrush}" />
+                    </StackPanel>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0">
+                    <TextBlock x:Name="TopWorkspace" Text="SPRITE STUDIO" Foreground="{DynamicResource MutedBrush}" FontSize="9" VerticalAlignment="Center" />
+                    <TextBlock Text="   /   " Foreground="{DynamicResource DetailLabelBrush}" VerticalAlignment="Center" />
+                    <TextBlock x:Name="TopLibrary" Text="Biblioteca de sprites" FontSize="10" FontWeight="SemiBold" VerticalAlignment="Center" />
+                </StackPanel>
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
+                    <Button x:Name="SaveAllButton" Content="Salvar tudo" Click="SaveAllButton_Click" Padding="10,6" FontSize="10" Margin="0,0,6,0" IsEnabled="False" />
+                    <Button x:Name="CompileAsButton" Content="Compilar como…" Click="CompileAsButton_Click" Padding="10,6" FontSize="10" Margin="0,0,6,0" IsEnabled="False" />
+                    <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Background="{DynamicResource PanelBackground}" CornerRadius="12" Padding="9,5" Margin="0,0,10,0">
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse x:Name="StatusDot" Width="6" Height="6" Fill="{DynamicResource SubtleTextBrush}" VerticalAlignment="Center" Margin="0,0,7,0" />
+                            <TextBlock x:Name="StatusText" Text="Aguardando arquivo" Foreground="{DynamicResource MutedBrush}" FontSize="9" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+                    <Border x:Name="OtbStatusBadge" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Background="{DynamicResource PanelBackground}" CornerRadius="12" Padding="9,5" Margin="0,0,10,0">
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse x:Name="OtbStatusDot" Width="6" Height="6" Fill="{DynamicResource ErrorBrush}" VerticalAlignment="Center" Margin="0,0,7,0" />
+                            <TextBlock x:Name="OtbStatusText" Text="items.otb" Foreground="{DynamicResource MutedBrush}" FontSize="9" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+                    <Button x:Name="SlicerButton" Content="Slicer" Click="SlicerButton_Click" Padding="10,6" FontSize="10" Margin="0,0,6,0" />
+                    <Button x:Name="ImportFolderButton" Content="Importar pasta…" Click="ImportFolderButton_Click" Padding="10,6" FontSize="10" Margin="0,0,6,0" />
+                    <Button x:Name="OpenDatButton" Content="Abrir DAT" Click="OpenDatButton_Click" Padding="10,6" FontSize="10" Margin="0,0,6,0" />
+                    <Button x:Name="OpenServerItemsButton" Content="Abrir OTB/XML" Click="OpenServerItemsButton_Click" Padding="10,6" FontSize="10" Margin="0,0,6,0" />
+                    <Button x:Name="OpenButton" Content="Abrir SPR" Click="OpenButton_Click" Padding="10,6" FontSize="10" Margin="0,0,6,0" />
+                    <Button x:Name="PrimaryOpenButton" Content="＋  Abrir pasta do cliente" Style="{StaticResource PrimaryButton}" Padding="11,6" FontSize="10" Click="OpenFolderButton_Click" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="250" />
+                <ColumnDefinition Width="286" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition x:Name="ObjectSpriteColumn" Width="0" />
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Background="{DynamicResource SidebarBackgroundBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0">
+                <DockPanel LastChildFill="True">
+                    <StackPanel DockPanel.Dock="Bottom" Margin="10,0,10,8">
+                        <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Background="{DynamicResource PanelBackground}" CornerRadius="6" Padding="7,2">
+                            <DockPanel>
+                                <TextBlock x:Name="LanguageLabel" Text="Idioma" Foreground="{DynamicResource MutedBrush}" FontSize="9" VerticalAlignment="Center" />
+                                <ComboBox x:Name="LanguageCombo" Width="130" BorderThickness="0" SelectionChanged="LanguageCombo_SelectionChanged" HorizontalAlignment="Right">
+                                    <ComboBoxItem Content="Português (Brasil)" Tag="pt" IsSelected="True" />
+                                    <ComboBoxItem Content="English" Tag="en" />
+                                </ComboBox>
+                            </DockPanel>
+                        </Border>
+                        <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Background="{DynamicResource PanelBackground}" CornerRadius="6" Padding="7,2" Margin="0,6,0,0">
+                            <DockPanel>
+                                <TextBlock x:Name="ThemeLabel" Text="Tema" Foreground="{DynamicResource MutedBrush}" FontSize="9" VerticalAlignment="Center" />
+                                <ComboBox x:Name="ThemeCombo" Width="150" BorderThickness="0" SelectionChanged="ThemeCombo_SelectionChanged" SelectedValuePath="Tag" HorizontalAlignment="Right">
+                                    <ComboBoxItem Content="Escuro" Tag="dark" />
+                                    <ComboBoxItem Content="Object Build" Tag="object-build" />
+                                    <ComboBoxItem Content="Claro" Tag="light" />
+                                </ComboBox>
+                            </DockPanel>
+                        </Border>
+                        <TextBlock x:Name="PrivacyLabel" Text="Seus arquivos ficam no seu computador." TextWrapping="Wrap" FontSize="8" Foreground="{DynamicResource PrivacyTextBrush}" Margin="2,6,0,0" />
+                    </StackPanel>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" CanContentScroll="False">
+                    <Grid Margin="10,12,10,10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" MaxHeight="400" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Background="{DynamicResource PanelBackground}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="7" Padding="10,8">
+                        <StackPanel>
+                            <TextBlock x:Name="InfoTitle" Text="Informações" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,7" />
+                            <Grid>
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="19" /><RowDefinition Height="19" /><RowDefinition Height="19" />
+                                    <RowDefinition Height="19" /><RowDefinition Height="19" /><RowDefinition Height="19" />
+                                    <RowDefinition Height="19" /><RowDefinition Height="19" /><RowDefinition Height="19" />
+                                </Grid.RowDefinitions>
+                                <TextBlock x:Name="ClientVersionLabel" Text="Versão:" Grid.Row="0" Foreground="{DynamicResource MutedBrush}" FontSize="9" />
+                                <TextBlock x:Name="ClientVersionValue" Text="—" Grid.Row="0" Grid.Column="1" Foreground="{DynamicResource AccentBrush}" FontSize="9" />
+                                <TextBlock x:Name="SpriteDimensionLabel" Text="Dimensão:" Grid.Row="1" Foreground="{DynamicResource MutedBrush}" FontSize="9" />
+                                <TextBlock Text="32 × 32" Grid.Row="1" Grid.Column="1" Foreground="{DynamicResource AccentBrush}" FontSize="9" />
+                                <TextBlock x:Name="DatSignatureLabel" Text="Assinatura DAT:" Grid.Row="2" Foreground="{DynamicResource MutedBrush}" FontSize="9" />
+                                <TextBlock x:Name="DatSignatureValue" Text="—" Grid.Row="2" Grid.Column="1" Foreground="{DynamicResource AccentBrush}" FontSize="9" />
+                                <TextBlock x:Name="SprSignatureLabel" Text="Assinatura SPR:" Grid.Row="3" Foreground="{DynamicResource MutedBrush}" FontSize="9" />
+                                <TextBlock x:Name="SprSignatureValue" Text="—" Grid.Row="3" Grid.Column="1" Foreground="{DynamicResource AccentBrush}" FontSize="9" />
+                                <TextBlock x:Name="ItemsCountLabel" Text="Itens:" Grid.Row="4" Foreground="{DynamicResource MutedBrush}" FontSize="9" />
+                                <TextBlock x:Name="ItemsCountValue" Text="—" Grid.Row="4" Grid.Column="1" Foreground="{DynamicResource AccentBrush}" FontSize="9" />
+                                <TextBlock x:Name="OutfitsCountLabel" Text="Outfits:" Grid.Row="5" Foreground="{DynamicResource MutedBrush}" FontSize="9" />
+                                <TextBlock x:Name="OutfitsCountValue" Text="—" Grid.Row="5" Grid.Column="1" Foreground="{DynamicResource AccentBrush}" FontSize="9" />
+                                <TextBlock x:Name="EffectsCountLabel" Text="Efeitos:" Grid.Row="6" Foreground="{DynamicResource MutedBrush}" FontSize="9" />
+                                <TextBlock x:Name="EffectsCountValue" Text="—" Grid.Row="6" Grid.Column="1" Foreground="{DynamicResource AccentBrush}" FontSize="9" />
+                                <TextBlock x:Name="MissilesCountLabel" Text="Projéteis:" Grid.Row="7" Foreground="{DynamicResource MutedBrush}" FontSize="9" />
+                                <TextBlock x:Name="MissilesCountValue" Text="—" Grid.Row="7" Grid.Column="1" Foreground="{DynamicResource AccentBrush}" FontSize="9" />
+                                <TextBlock x:Name="SpritesCountLabel" Text="Sprites:" Grid.Row="8" Foreground="{DynamicResource MutedBrush}" FontSize="9" />
+                                <TextBlock x:Name="SpritesCountValue" Text="—" Grid.Row="8" Grid.Column="1" Foreground="{DynamicResource AccentBrush}" FontSize="9" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <StackPanel Grid.Row="1" Margin="2,9,2,7">
+                        <TextBlock x:Name="CategorySectionLabel" Text="Categoria" Foreground="{DynamicResource MutedBrush}" FontSize="9" Margin="1,0,0,4" Visibility="Collapsed" />
+                        <ComboBox x:Name="CategoryCombo" Height="29" SelectionChanged="CategoryCombo_SelectionChanged" Visibility="Collapsed">
+                            <ComboBoxItem Content="Itens" Tag="item" IsSelected="True" />
+                            <ComboBoxItem Content="Outfits" Tag="outfit" />
+                            <ComboBoxItem Content="Efeitos" Tag="effect" />
+                            <ComboBoxItem Content="Projéteis" Tag="missile" />
+                        </ComboBox>
+                        <Button x:Name="BulkAnimationSpeedButton" Content="Velocidade de animação…" Style="{StaticResource SecondaryButton}" Margin="0,6,0,0" Padding="8,6" FontSize="9" Click="BulkAnimationSpeedButton_Click" Visibility="Collapsed" />
+                    </StackPanel>
+
+                    <Border Grid.Row="2" Background="{DynamicResource PreviewTileBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="7" Margin="0,2,0,8" ClipToBounds="True">
+                        <Grid>
+                            <TextBlock x:Name="InfoPreviewEmptyText" Text="Selecione um objeto" Foreground="{DynamicResource SubtleTextBrush}" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            <Image x:Name="InfoPreviewImage" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased" />
+                            <CheckBox x:Name="ActualSizeCheckBox" Content="Tamanho real" ToolTip="Mostrar a mini prévia no tamanho nativo do sprite" Click="ActualSizeCheckBox_Click"
+                                      HorizontalAlignment="Right" VerticalAlignment="Top" Margin="6" Padding="5,2" Background="{DynamicResource PanelBackground}"
+                                      Foreground="{DynamicResource MutedBrush}" FontSize="8" IsEnabled="False" Panel.ZIndex="1">
+                                <CheckBox.Template>
+                                    <ControlTemplate TargetType="CheckBox">
+                                        <Grid x:Name="Root" Background="Transparent">
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                            <Border x:Name="CheckBoxBorder" Width="14" Height="14" CornerRadius="2" Background="{DynamicResource PanelAlt}"
+                                                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" VerticalAlignment="Center">
+                                                <TextBlock x:Name="CheckMark" Text="✓" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AccentTextBrush}"
+                                                           HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" />
+                                            </Border>
+                                            <ContentPresenter Grid.Column="1" ContentSource="Content" RecognizesAccessKey="True"
+                                                              VerticalAlignment="Center" Margin="5,0,0,0" />
+                                        </Grid>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsChecked" Value="True">
+                                                <Setter TargetName="CheckBoxBorder" Property="Background" Value="{DynamicResource AccentBrush}" />
+                                                <Setter TargetName="CheckBoxBorder" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                                                <Setter TargetName="CheckMark" Property="Visibility" Value="Visible" />
+                                            </Trigger>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="CheckBoxBorder" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                                            </Trigger>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter TargetName="Root" Property="Opacity" Value="0.55" />
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </CheckBox.Template>
+                            </CheckBox>
+                        </Grid>
+                    </Border>
+
+                    <StackPanel Grid.Row="3" Margin="2,1,2,7">
+                        <TextBlock x:Name="DetailIdLabel" Text="ID DO OBJETO" FontSize="8" FontWeight="Bold" Foreground="{DynamicResource DetailLabelBrush}" />
+                        <TextBlock x:Name="SelectedIdText" Text="—" FontSize="12" Margin="0,3,0,7" />
+                        <TextBlock x:Name="DetailFileLabel" Text="ARQUIVO" FontSize="8" FontWeight="Bold" Foreground="{DynamicResource DetailLabelBrush}" Visibility="Collapsed" />
+                        <TextBlock x:Name="SelectedFileText" Text="—" FontSize="9" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,3,0,7" Visibility="Collapsed" />
+                        <TextBlock x:Name="VersionLabel" Text="VERSÃO" FontSize="8" FontWeight="Bold" Foreground="{DynamicResource DetailLabelBrush}" Visibility="Collapsed" />
+                        <TextBlock x:Name="VersionText" Text="—" FontSize="9" Foreground="{DynamicResource MutedBrush}" Margin="0,3,0,7" Visibility="Collapsed" />
+                        <DockPanel>
+                            <StackPanel Orientation="Horizontal">
+                        <TextBlock x:Name="CanvasDimensionsLabel" Text="DIMENSÕES" FontSize="8" FontWeight="Bold" Foreground="{DynamicResource DetailLabelBrush}" VerticalAlignment="Center" />
+                                <TextBlock x:Name="SelectedDimensionsText" Text="—" FontSize="9" Foreground="{DynamicResource MutedBrush}" Margin="7,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <Button x:Name="ExportButton" Content="↓ PNG" Padding="8,4" FontSize="9" IsEnabled="False" Click="ExportButton_Click" DockPanel.Dock="Right" />
+                        </DockPanel>
+                    </StackPanel>
+
+                    </Grid>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+
+            <Border Grid.Column="1" Background="{DynamicResource PanelBackground}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0">
+                <Grid Margin="8,12,8,10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="34" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="0" Margin="1,0,1,7">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock x:Name="SpritesTitle" Text="Objetos" FontWeight="SemiBold" FontSize="12" />
+                            <TextBlock x:Name="SpriteCountText" Text="—" Foreground="{DynamicResource MutedBrush}" FontSize="9" Margin="8,2,0,0" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                            <Button x:Name="ListViewButton" Content="Lista" Style="{StaticResource PrimaryButton}" Padding="8,5" FontSize="9" Click="ListViewButton_Click" Margin="0,0,4,0" />
+                            <Button x:Name="GridViewButton" Content="Grade" Padding="8,5" FontSize="9" Click="GridViewButton_Click" Margin="0,0,4,0" />
+                            <Button x:Name="FindButton" Content="Buscar" Padding="8,5" FontSize="9" Click="FindButton_Click" />
+                        </StackPanel>
+                    </Grid>
+
+                    <Grid Grid.Row="1" Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="98" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                        <ComboBox x:Name="ViewModeCombo" Grid.Column="0" Height="29" Margin="0,0,5,0" SelectionChanged="ViewModeCombo_SelectionChanged" IsEnabled="False">
+                            <ComboBoxItem Content="Sprites SPR" Tag="sprites" IsSelected="True" />
+                            <ComboBoxItem Content="Objetos DAT" Tag="things" />
+                        </ComboBox>
+                        <TextBox x:Name="SearchBox" Grid.Column="1" Height="29" Padding="8,5" Background="{DynamicResource PanelBackground}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" FontSize="10" TextChanged="SearchBox_TextChanged" PreviewKeyDown="SearchBox_PreviewKeyDown" IsEnabled="False" ToolTip="Buscar pelo ID" />
+                    </Grid>
+
+                    <Border Grid.Row="2" Background="{DynamicResource PanelAlt}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="6" Padding="4">
+                        <Grid>
+                            <ScrollViewer x:Name="SpriteScrollViewer" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                <WrapPanel x:Name="SpriteGrid" />
+                            </ScrollViewer>
+                            <StackPanel x:Name="EmptyState" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="8">
+                                <TextBlock x:Name="EmptyTitle" Text="Nenhum objeto encontrado" HorizontalAlignment="Center" FontWeight="SemiBold" FontSize="11" TextAlignment="Center" />
+                                <TextBlock x:Name="EmptyBody" Text="Abra a pasta do cliente para carregar os arquivos." Foreground="{DynamicResource MutedBrush}" FontSize="9" Margin="0,5,0,0" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <StackPanel x:Name="DatActionToolbar" Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6,0,0" Visibility="Collapsed">
+                        <Button x:Name="DatNewButton" Content="＋" Width="37" Height="29" Padding="0" Margin="1,0" FontSize="13" Click="DatNewButton_Click" />
+                        <Button x:Name="DatReplaceButton" Content="↻" Width="37" Height="29" Padding="0" Margin="1,0" FontSize="13" Click="DatReplaceButton_Click" />
+                        <Button x:Name="DatDuplicateButton" Content="⧉" Width="37" Height="29" Padding="0" Margin="1,0" FontSize="13" Click="DatDuplicateButton_Click" />
+                        <Button x:Name="DatImportButton" Content="⇧" Width="37" Height="29" Padding="0" Margin="1,0" FontSize="13" Click="DatImportButton_Click" />
+                        <Button x:Name="DatExportButton" Content="⇩" Width="37" Height="29" Padding="0" Margin="1,0" FontSize="13" Click="DatExportButton_Click" />
+                        <Button x:Name="DatDeleteButton" Content="⌫" Width="37" Height="29" Padding="0" Margin="1,0" FontSize="13" Click="DatDeleteButton_Click" />
+                    </StackPanel>
+                    <StackPanel x:Name="PagerPanel" Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,8,0,0" Visibility="Collapsed">
+                        <Button x:Name="FirstPageButton" Content="|←" Padding="7,4" Click="FirstPageButton_Click" ToolTip="Primeira página" />
+                        <Button x:Name="PreviousPageButton" Content="←" Padding="8,4" Click="PreviousPageButton_Click" />
+                        <TextBlock x:Name="PageText" Text="Página 1 de 1" Foreground="{DynamicResource MutedBrush}" FontSize="9" VerticalAlignment="Center" Margin="10,0" />
+                        <Button x:Name="NextPageButton" Content="→" Padding="8,4" Click="NextPageButton_Click" />
+                        <Button x:Name="LastPageButton" Content="→|" Padding="7,4" Click="LastPageButton_Click" ToolTip="Última página" />
+                    </StackPanel>
+                    <TextBlock x:Name="ErrorText" Grid.Row="5" Foreground="{DynamicResource ErrorBrush}" FontSize="9" TextWrapping="Wrap" Margin="2,7,2,0" Visibility="Collapsed" />
+                </Grid>
+            </Border>
+
+            <Grid Grid.Column="2" Margin="10,10,10,10">
+                <TabControl x:Name="WorkspaceTabs" Background="Transparent" BorderThickness="0">
+                    <TabControl.Resources>
+                        <Style TargetType="TabItem">
+                            <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
+                            <Setter Property="Background" Value="{DynamicResource PreviewCanvasBrush}" />
+                            <Setter Property="Padding" Value="13,7" />
+                            <Setter Property="Margin" Value="0,0,3,0" />
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="TabItem">
+                                        <Border x:Name="TabBorder" Background="{TemplateBinding Background}" CornerRadius="5,5,0,0" Padding="{TemplateBinding Padding}">
+                                            <ContentPresenter ContentSource="Header" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter TargetName="TabBorder" Property="Background" Value="{DynamicResource PanelBackground}" />
+                                                <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+                                            </Trigger>
+                                            <Trigger Property="IsEnabled" Value="False"><Setter TargetName="TabBorder" Property="Opacity" Value="0.55" /></Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </TabControl.Resources>
+                    <TabControl.Template>
+                        <ControlTemplate TargetType="TabControl">
+                            <DockPanel KeyboardNavigation.TabNavigation="Local">
+                                <Border DockPanel.Dock="Top" Background="{DynamicResource PanelBackground}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1" Padding="4,4,0,0">
+                                    <TabPanel IsItemsHost="True" KeyboardNavigation.TabIndex="1" />
+                                </Border>
+                                <Border Background="{DynamicResource PanelBackground}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="0,0,7,7" Padding="8">
+                                    <ContentPresenter x:Name="PART_SelectedContentHost" ContentSource="SelectedContent" SnapsToDevicePixels="True" />
+                                </Border>
+                            </DockPanel>
+                        </ControlTemplate>
+                    </TabControl.Template>
+
+                    <TabItem x:Name="TextureTab" Header="Textura">
+                        <Grid>
+                            <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                            <Grid Grid.Row="0" Margin="4,0,4,6">
+                                <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                                <Grid Grid.Row="0">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock x:Name="PreviewTitle" Text="Aparência" FontWeight="SemiBold" FontSize="10" VerticalAlignment="Center" Margin="0,0,12,0" />
+                                        <TextBlock x:Name="ZoomLabel" Text="Zoom:" Foreground="{DynamicResource MutedBrush}" FontSize="9" VerticalAlignment="Center" Margin="0,0,5,0" />
+                                        <ComboBox x:Name="ZoomCombo" Width="65" Height="26" SelectionChanged="ZoomCombo_SelectionChanged">
+                                            <ComboBoxItem Content="1×" Tag="1" IsSelected="True" />
+                                            <ComboBoxItem Content="2×" Tag="2" />
+                                            <ComboBoxItem Content="4×" Tag="4" />
+                                        </ComboBox>
+                                        <CheckBox x:Name="ShowGridCheckBox" Content="Exibir grades" IsChecked="True" Click="ShowGridCheckBox_Click" VerticalAlignment="Center" Margin="10,0,0,0" Foreground="{DynamicResource MutedBrush}" FontSize="9" />
+                                    </StackPanel>
+                                    <StackPanel x:Name="PixelEditingToolbar" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="8,0,0,0" Visibility="Collapsed">
+                                        <CheckBox x:Name="EditPixelsCheckBox" Content="Edit Pixels" ToolTip="Ative para mover a imagem pixel por pixel com as setas do teclado" Click="EditPixelsCheckBox_Click"
+                                                  VerticalAlignment="Center" Margin="0,0,12,0" Foreground="{DynamicResource MutedBrush}" FontSize="9" />
+                                        <StackPanel x:Name="PixelNudgeButtons" Orientation="Horizontal" VerticalAlignment="Center" Margin="-8,0,8,0" Visibility="Collapsed">
+                                            <Button x:Name="PixelMoveLeftButton" Content="←" Tag="left" Width="25" Height="25" Padding="0" Margin="0,0,2,0" FontSize="13" Click="PixelNudgeButton_Click" />
+                                            <Button x:Name="PixelMoveUpButton" Content="↑" Tag="up" Width="25" Height="25" Padding="0" Margin="0,0,2,0" FontSize="13" Click="PixelNudgeButton_Click" />
+                                            <Button x:Name="PixelMoveDownButton" Content="↓" Tag="down" Width="25" Height="25" Padding="0" Margin="0,0,2,0" FontSize="13" Click="PixelNudgeButton_Click" />
+                                            <Button x:Name="PixelMoveRightButton" Content="→" Tag="right" Width="25" Height="25" Padding="0" FontSize="13" Click="PixelNudgeButton_Click" />
+                                        </StackPanel>
+                                        <CheckBox x:Name="WrapPixelsCheckBox" Content="Wrap" ToolTip="Envolver pixels pela borda ao mover" IsEnabled="False" Click="WrapPixelsCheckBox_Click"
+                                                  VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{DynamicResource MutedBrush}" FontSize="9" />
+                                        <ComboBox x:Name="PixelAlignmentCombo" Width="122" Height="25" IsEnabled="False" ToolTip="Alinhar os pixels no quadro" SelectionChanged="PixelAlignmentCombo_SelectionChanged" Margin="0,0,12,0">
+                                            <ComboBoxItem Content="Padrão" Tag="default" IsSelected="True" />
+                                            <ComboBoxItem Content="Centralizar" Tag="center" />
+                                            <ComboBoxItem Content="Superior esquerdo" Tag="topLeft" />
+                                            <ComboBoxItem Content="Superior direito" Tag="topRight" />
+                                            <ComboBoxItem Content="Inferior direito" Tag="bottomRight" />
+                                            <ComboBoxItem Content="Inferior esquerdo" Tag="bottomLeft" />
+                                        </ComboBox>
+                                        <Button x:Name="DeleteAnimationFramesButton" Content="Excluir" Width="84" Height="25" Padding="5,2" Margin="0,0,8,0" Visibility="Collapsed" IsEnabled="False" Click="DeleteAnimationFramesButton_Click" />
+                                        <CheckBox x:Name="FilmRollCheckBox" Content="Film Roll" ToolTip="Mostrar todos os quadros de animação lado a lado" Click="FilmRollCheckBox_Click"
+                                                  VerticalAlignment="Center" Foreground="{DynamicResource MutedBrush}" FontSize="9" />
+                                    </StackPanel>
+                                </Grid>
+                                <StackPanel x:Name="PatternSelectorsPanel" Grid.Row="1" Orientation="Horizontal" Margin="0,6,0,0" VerticalAlignment="Center" Visibility="Collapsed">
+                                    <TextBlock x:Name="FrameGroupLabel" Text="Grupo" Foreground="{DynamicResource MutedBrush}" FontSize="9" VerticalAlignment="Center" Margin="0,0,5,0" Visibility="Collapsed" />
+                                    <ComboBox x:Name="FrameGroupCombo" Width="105" Height="26" Visibility="Collapsed" SelectionChanged="FrameGroupCombo_SelectionChanged" />
+                                    <TextBlock x:Name="PatternXLabel" Text="Direção / X" Foreground="{DynamicResource MutedBrush}" FontSize="9" VerticalAlignment="Center" Margin="10,0,5,0" Visibility="Collapsed" />
+                                    <ComboBox x:Name="PatternXCombo" Width="90" Height="26" Visibility="Collapsed" SelectionChanged="PatternCombo_SelectionChanged" />
+                                    <TextBlock x:Name="PatternYLabel" Text="Y" Foreground="{DynamicResource MutedBrush}" FontSize="9" VerticalAlignment="Center" Margin="8,0,4,0" Visibility="Collapsed" />
+                                    <ComboBox x:Name="PatternYCombo" Width="65" Height="26" Visibility="Collapsed" SelectionChanged="PatternCombo_SelectionChanged" />
+                                    <TextBlock x:Name="PatternZLabel" Text="Z" Foreground="{DynamicResource MutedBrush}" FontSize="9" VerticalAlignment="Center" Margin="8,0,4,0" Visibility="Collapsed" />
+                                    <ComboBox x:Name="PatternZCombo" Width="65" Height="26" Visibility="Collapsed" SelectionChanged="PatternCombo_SelectionChanged" />
+                                </StackPanel>
+                            </Grid>
+
+                            <Border x:Name="PreviewCanvasBorder" Grid.Row="1" Background="{DynamicResource PreviewCanvasBrush}" BorderBrush="{DynamicResource PreviewBorderBrush}" BorderThickness="1" CornerRadius="5" ClipToBounds="True">
+                                <Grid x:Name="PreviewCanvasRoot" ClipToBounds="True" AllowDrop="True" Focusable="True"
+                                      DragOver="PreviewCanvas_DragOver" DragLeave="PreviewCanvas_DragLeave" Drop="PreviewCanvas_Drop"
+                                          PreviewMouseLeftButtonDown="PreviewCanvasRoot_PreviewMouseLeftButtonDown" SizeChanged="PreviewCanvasRoot_SizeChanged">
+                                    <TextBlock x:Name="CanvasEmptyState" Text="Selecione um objeto para visualizar" Foreground="{DynamicResource CanvasTextBrush}" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    <Canvas x:Name="PreviewTileBackground" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False" Visibility="Collapsed" />
+                                    <Image x:Name="PreviewImage" Stretch="None" HorizontalAlignment="Center" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased" />
+                                    <Canvas x:Name="PreviewGridOverlay" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False" Visibility="Collapsed" />
+                                    <Canvas x:Name="PreviewPixelGridOverlay" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False" Visibility="Collapsed" />
+                                    <ScrollViewer x:Name="FilmRollScrollViewer" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                                                  Visibility="Collapsed" Background="Transparent" Padding="8">
+                                        <StackPanel x:Name="FilmRollPanel" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    </ScrollViewer>
+                                    <TextBlock x:Name="CanvasAssemblyHint" Text="Arraste sprites da lista à direita para montar o objeto"
+                                               Foreground="{DynamicResource OverlayTextBrush}" Background="{DynamicResource CanvasOverlayBrush}" Padding="12,8" FontSize="10"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center"
+                                               IsHitTestVisible="False" Visibility="Collapsed" />
+                                    <Border x:Name="CanvasDropHint" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="2"
+                                            CornerRadius="6" Background="{DynamicResource CanvasOverlayLightBrush}" Margin="8" IsHitTestVisible="False" Visibility="Collapsed">
+                                        <TextBlock x:Name="CanvasDropHintText" Text="Solte para colocar o sprite nesta célula" Foreground="White"
+                                                   FontSize="11" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    </Border>
+                                    <Border x:Name="DropPanel" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1" CornerRadius="8" Background="{DynamicResource PanelInsetBrush}" MinHeight="156" MaxWidth="490" Padding="20" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <Border Width="36" Height="36" CornerRadius="10" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1" Background="{DynamicResource PanelIconBrush}" HorizontalAlignment="Center" Margin="0,0,0,8">
+                                                <TextBlock Text="⇧" Foreground="{DynamicResource AccentBrush}" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            </Border>
+                                            <TextBlock x:Name="Eyebrow" Text="SPRITE STUDIO" Foreground="{DynamicResource AccentBrush}" FontSize="8" FontWeight="Bold" HorizontalAlignment="Center" />
+                                            <TextBlock x:Name="TitleText" Text="Editor de sprites" FontWeight="SemiBold" FontSize="13" HorizontalAlignment="Center" Margin="0,3,0,0" />
+                                            <TextBlock x:Name="DropTitle" Text="Abra a pasta do cliente Tibia" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center" Margin="0,3,0,0" />
+                                            <TextBlock x:Name="DropText" Text="O programa encontra e carrega o DAT e o SPR juntos." Foreground="{DynamicResource MutedBrush}" FontSize="9" Margin="0,4,0,9" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" />
+                                            <Button x:Name="ChooseFileButton" Content="Selecionar pasta do cliente" Style="{StaticResource PrimaryButton}" Padding="11,6" FontSize="9" Click="OpenFolderButton_Click" HorizontalAlignment="Center" />
+                                            <TextBlock x:Name="SupportedText" Text="Ou arraste aqui os arquivos DAT e SPR." Foreground="{DynamicResource MutedBrush}" FontSize="8" Margin="0,7,0,0" HorizontalAlignment="Center" />
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+                            </Border>
+
+                            <Grid x:Name="AnimationLayerPanel" Grid.Row="2" Margin="4,8,4,3" Visibility="Collapsed">
+                                <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                                <Grid Grid.Row="0" VerticalAlignment="Center">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <Button x:Name="AnimationPlayButton" Content="▶" Grid.Column="0" Padding="8,4" FontSize="10" Click="AnimationPlayButton_Click" IsEnabled="False" />
+                                    <TextBlock x:Name="AnimationLabel" Text="Animação" Grid.Column="1" Foreground="{DynamicResource MutedBrush}" FontSize="9" VerticalAlignment="Center" Margin="8,0,7,0" />
+                                    <Slider x:Name="AnimationFrameSlider" Grid.Column="2" Minimum="1" Maximum="1" Value="1" TickFrequency="1" IsSnapToTickEnabled="True" VerticalAlignment="Center" IsEnabled="False" ValueChanged="AnimationFrameSlider_ValueChanged" />
+                                    <TextBlock x:Name="AnimationFrameText" Text="0/0" Grid.Column="3" Foreground="{DynamicResource TextBrush}" FontSize="9" VerticalAlignment="Center" Margin="7,0,14,0" MinWidth="34" />
+                                    <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
+                                        <TextBlock x:Name="MinimumDurationLabel" Text="Mín." Foreground="{DynamicResource MutedBrush}" FontSize="8" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                        <TextBox x:Name="MinimumDurationInput" Text="—" Width="64" Height="22" Padding="3,1" HorizontalContentAlignment="Right" Background="{DynamicResource PanelAlt}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource BorderBrush}" FontSize="9" IsEnabled="False" TextChanged="AnimationDuration_TextChanged" />
+                                        <TextBlock Text="ms" Foreground="{DynamicResource MutedBrush}" FontSize="8" VerticalAlignment="Center" Margin="3,0,0,0" />
+                                        <Button x:Name="ApplyMinimumDurationButton" Content="↓" Width="24" Height="22" Padding="3,0" Margin="3,0,0,0" FontSize="10" IsEnabled="False" ToolTip="Aplicar mínimo a todos os quadros" Click="ApplyMinimumDurationToAll_Click" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="5" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock x:Name="MaximumDurationLabel" Text="Máx." Foreground="{DynamicResource MutedBrush}" FontSize="8" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                        <TextBox x:Name="MaximumDurationInput" Text="—" Width="64" Height="22" Padding="3,1" HorizontalContentAlignment="Right" Background="{DynamicResource PanelAlt}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource BorderBrush}" FontSize="9" IsEnabled="False" TextChanged="AnimationDuration_TextChanged" />
+                                        <TextBlock Text="ms" Foreground="{DynamicResource MutedBrush}" FontSize="8" VerticalAlignment="Center" Margin="3,0,0,0" />
+                                        <Button x:Name="ApplyMaximumDurationButton" Content="↓" Width="24" Height="22" Padding="3,0" Margin="3,0,0,0" FontSize="10" IsEnabled="False" ToolTip="Aplicar máximo a todos os quadros" Click="ApplyMaximumDurationToAll_Click" />
+                                    </StackPanel>
+                                </Grid>
+                                <Grid Grid.Row="1" Margin="0,4,0,0" VerticalAlignment="Center">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                                    <TextBlock x:Name="LayerLabel" Text="Layer" Grid.Column="1" Foreground="{DynamicResource MutedBrush}" FontSize="9" VerticalAlignment="Center" Margin="8,0,7,0" />
+                                    <Slider x:Name="LayerSlider" Grid.Column="2" Minimum="1" Maximum="1" Value="1" TickFrequency="1" IsSnapToTickEnabled="True" VerticalAlignment="Center" IsEnabled="False" ValueChanged="LayerSlider_ValueChanged" />
+                                    <TextBlock x:Name="LayerCounterText" Text="—/—" Grid.Column="3" Foreground="{DynamicResource TextBrush}" FontSize="9" VerticalAlignment="Center" Margin="7,0,0,0" MinWidth="34" />
+                                </Grid>
+                            </Grid>
+                            <Border x:Name="PatternMetadataPanel" Grid.Row="3" Margin="0,7,0,0" BorderThickness="0" Background="Transparent" Padding="0" Visibility="Collapsed">
+                                <Grid>
+                                    <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                                    <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Background="{DynamicResource PanelInsetBrush}" CornerRadius="5" Padding="10,8">
+                                        <Grid>
+                                            <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,7">
+                                                <Border Width="3" Height="14" Background="{DynamicResource AccentBrush}" CornerRadius="1" Margin="0,0,7,0" />
+                                                <TextBlock x:Name="AnimationDimensionsHeading" Text="DIMENSÕES" FontSize="10" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                            <Grid Grid.Row="1" Margin="0,0,0,5">
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                                <Grid.RowDefinitions><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                                                <Grid Margin="0,0,8,0">
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                                    <TextBlock x:Name="PatternWidthLabel" Text="LARGURA" FontSize="9" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Margin="2,0,8,0" />
+                                                    <TextBox x:Name="PatternWidthText" Grid.Column="1" Text="—" Width="76" Height="27" Padding="5,2" HorizontalAlignment="Right" HorizontalContentAlignment="Right" VerticalContentAlignment="Center" Background="{DynamicResource PanelAlt}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource BorderBrush}" FontSize="10" IsEnabled="False" TextChanged="MetadataField_TextChanged" />
+                                                </Grid>
+                                                <Grid Grid.Column="1" Margin="8,0,0,0">
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                                    <TextBlock x:Name="PatternHeightLabel" Text="ALTURA" FontSize="9" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Margin="2,0,8,0" />
+                                                    <TextBox x:Name="PatternHeightText" Grid.Column="1" Text="—" Width="76" Height="27" Padding="5,2" HorizontalAlignment="Right" HorizontalContentAlignment="Right" VerticalContentAlignment="Center" Background="{DynamicResource PanelAlt}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource BorderBrush}" FontSize="10" IsEnabled="False" TextChanged="MetadataField_TextChanged" />
+                                                </Grid>
+                                            </Grid>
+                                            <Grid Grid.Row="2">
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                                <Grid Margin="0,0,8,0">
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                                    <TextBlock x:Name="PatternCropLabel" Text="TAMANHO EXATO" FontSize="9" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Margin="2,0,8,0" />
+                                                    <TextBox x:Name="PatternCropText" Grid.Column="1" Text="—" Width="76" Height="27" Padding="5,2" HorizontalAlignment="Right" HorizontalContentAlignment="Right" VerticalContentAlignment="Center" Background="{DynamicResource PanelAlt}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource BorderBrush}" FontSize="10" IsEnabled="False" TextChanged="MetadataField_TextChanged" />
+                                                </Grid>
+                                                <Grid Grid.Column="1" Margin="8,0,0,0">
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                                    <TextBlock x:Name="PatternFramesLabel" Text="ANIMAÇÕES" FontSize="9" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Margin="2,0,8,0" />
+                                                    <TextBox x:Name="PatternFramesText" Grid.Column="1" Text="—" Width="76" Height="27" Padding="5,2" HorizontalAlignment="Right" HorizontalContentAlignment="Right" VerticalContentAlignment="Center" Background="{DynamicResource PanelAlt}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource BorderBrush}" FontSize="10" IsEnabled="False" TextChanged="MetadataField_TextChanged" />
+                                                </Grid>
+                                            </Grid>
+                                        </Grid>
+                                    </Border>
+                                    <Border Grid.Row="1" Margin="0,7,0,0" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Background="{DynamicResource PanelInsetBrush}" CornerRadius="5" Padding="10,8">
+                                        <Grid>
+                                            <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,7">
+                                                <Border Width="3" Height="14" Background="{DynamicResource AccentBrush}" CornerRadius="1" Margin="0,0,7,0" />
+                                                <TextBlock x:Name="PatternSectionLabel" Text="PADRÃO &amp; CAMADAS" FontSize="10" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                            <Grid Grid.Row="1" Margin="0,0,0,5">
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                                <Grid Margin="0,0,8,0">
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                                    <TextBlock x:Name="PatternXInfoLabel" Text="PADRÃO X" FontSize="9" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Margin="2,0,8,0" />
+                                                    <TextBox x:Name="PatternXText" Grid.Column="1" Text="—" Width="76" Height="27" Padding="5,2" HorizontalAlignment="Right" HorizontalContentAlignment="Right" VerticalContentAlignment="Center" Background="{DynamicResource PanelAlt}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource BorderBrush}" FontSize="10" IsEnabled="False" TextChanged="MetadataField_TextChanged" />
+                                                </Grid>
+                                                <Grid Grid.Column="1" Margin="8,0,0,0">
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                                    <TextBlock x:Name="PatternYInfoLabel" Text="PADRÃO Y" FontSize="9" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Margin="2,0,8,0" />
+                                                    <TextBox x:Name="PatternYText" Grid.Column="1" Text="—" Width="76" Height="27" Padding="5,2" HorizontalAlignment="Right" HorizontalContentAlignment="Right" VerticalContentAlignment="Center" Background="{DynamicResource PanelAlt}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource BorderBrush}" FontSize="10" IsEnabled="False" TextChanged="MetadataField_TextChanged" />
+                                                </Grid>
+                                            </Grid>
+                                            <Grid Grid.Row="2">
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                                <Grid Margin="0,0,8,0">
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                                    <TextBlock x:Name="PatternZInfoLabel" Text="PADRÃO Z" FontSize="9" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Margin="2,0,8,0" />
+                                                    <TextBox x:Name="PatternZText" Grid.Column="1" Text="—" Width="76" Height="27" Padding="5,2" HorizontalAlignment="Right" HorizontalContentAlignment="Right" VerticalContentAlignment="Center" Background="{DynamicResource PanelAlt}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource BorderBrush}" FontSize="10" IsEnabled="False" TextChanged="MetadataField_TextChanged" />
+                                                </Grid>
+                                                <Grid Grid.Column="1" Margin="8,0,0,0">
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                                    <TextBlock x:Name="PatternLayersLabel" Text="CAMADAS" FontSize="9" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Margin="2,0,8,0" />
+                                                    <TextBox x:Name="PatternLayersText" Grid.Column="1" Text="—" Width="76" Height="27" Padding="5,2" HorizontalAlignment="Right" HorizontalContentAlignment="Right" VerticalContentAlignment="Center" Background="{DynamicResource PanelAlt}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource BorderBrush}" FontSize="10" IsEnabled="False" TextChanged="MetadataField_TextChanged" />
+                                                </Grid>
+                                            </Grid>
+                                            <Grid Grid.Row="3" Margin="0,5,0,0">
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                                <Grid Margin="0,0,8,0">
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                                    <TextBlock x:Name="FrameGroupsLabel" Text="GRUPOS" FontSize="9" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Margin="2,0,8,0" />
+                                                    <TextBox x:Name="FrameGroupsValue" Grid.Column="1" Text="—" Width="76" Height="27" Padding="5,2" HorizontalAlignment="Right" HorizontalContentAlignment="Right" VerticalContentAlignment="Center" Background="{DynamicResource PanelAlt}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource BorderBrush}" FontSize="10" IsEnabled="False" TextChanged="MetadataField_TextChanged" />
+                                                </Grid>
+                                            </Grid>
+                                        </Grid>
+                                    </Border>
+                                    <DockPanel Grid.Row="2" Margin="0,7,0,0" LastChildFill="False">
+                                        <TextBlock x:Name="MetadataSaveStatus" Text="" Foreground="{DynamicResource MutedBrush}" FontSize="8" VerticalAlignment="Center" />
+                                        <Button x:Name="SaveDatButton" Content="Salvar DAT" Style="{StaticResource PrimaryButton}" Padding="10,4" FontSize="9" IsEnabled="False" Click="SaveDatButton_Click" DockPanel.Dock="Right" />
+                                    </DockPanel>
+                                </Grid>
+                            </Border>
+                        </Grid>
+                    </TabItem>
+
+                    <TabItem x:Name="PropertiesTab" Header="Propriedades">
+                        <Grid>
+                            <TextBlock x:Name="PropertiesPlaceholder" Text="Selecione um item DAT para ver suas propriedades." Foreground="{DynamicResource MutedBrush}" FontSize="10" TextAlignment="Center" TextWrapping="Wrap" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            <ScrollViewer x:Name="PropertiesScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Visibility="Collapsed">
+                                <StackPanel x:Name="PropertiesContent" Margin="4" />
+                            </ScrollViewer>
+                        </Grid>
+                    </TabItem>
+
+                    <TabItem x:Name="AttributesTab" Header="Atributos">
+                        <Grid>
+                            <TextBlock x:Name="AttributesPlaceholder" Text="Selecione um item DAT para editar seus atributos." Foreground="{DynamicResource MutedBrush}" FontSize="10" TextAlignment="Center" TextWrapping="Wrap" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            <ScrollViewer x:Name="AttributesScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Visibility="Collapsed">
+                                <StackPanel Margin="4">
+                                    <TextBlock x:Name="AttributesEditorHeading" Text="Atributos do item" FontSize="11" FontWeight="SemiBold" Margin="2,0,0,7" />
+                                    <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Background="{DynamicResource PanelInsetBrush}" CornerRadius="5" Padding="9,7">
+                                        <Grid>
+                                            <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                                            <TextBlock x:Name="AttributeFlagsTitle" Text="Flags" Foreground="{DynamicResource MutedBrush}" FontSize="9" FontWeight="SemiBold" Margin="2,0,0,6" />
+                                            <Grid Grid.Row="1">
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                                <StackPanel x:Name="AttributeFlagsLeft" Margin="0,0,14,0" />
+                                                <StackPanel x:Name="AttributeFlagsRight" Grid.Column="1" Margin="14,0,0,0" />
+                                            </Grid>
+                                        </Grid>
+                                    </Border>
+                                    <Border x:Name="ServerItemPanel" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Background="{DynamicResource PanelInsetBrush}" CornerRadius="5" Padding="9,7" Margin="0,8,0,0" Visibility="Collapsed">
+                                        <StackPanel>
+                                            <DockPanel Margin="2,0,0,6">
+                                                <TextBlock x:Name="ServerItemPanelTitle" Text="Dados do servidor (items.otb / items.xml)" FontSize="9" FontWeight="SemiBold" />
+                                                <TextBlock x:Name="ServerItemsStatusText" Text="" Foreground="{DynamicResource MutedBrush}" FontSize="8" DockPanel.Dock="Right" />
+                                            </DockPanel>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                                <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                                                <TextBlock x:Name="ServerItemIdLabel" Text="ID servidor" VerticalAlignment="Center" Margin="2,3,6,3" Foreground="{DynamicResource MutedBrush}" FontSize="9" />
+                                                <TextBox x:Name="ServerItemServerIdInput" Grid.Column="1" IsReadOnly="True" Height="22" Margin="0,2,8,2" Padding="4,1" Background="{DynamicResource PanelAlt}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource BorderBrush}" FontSize="9" />
+                                                <TextBlock x:Name="ServerItemClientIdLabel" Grid.Column="2" Text="ID cliente" VerticalAlignment="Center" Margin="2,3,6,3" Foreground="{DynamicResource MutedBrush}" FontSize="9" />
+                                                <TextBox x:Name="ServerItemClientIdInput" Grid.Column="3" IsReadOnly="True" Height="22" Margin="0,2,0,2" Padding="4,1" Background="{DynamicResource PanelAlt}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource BorderBrush}" FontSize="9" />
+                                                <TextBlock x:Name="ServerItemNameLabel" Grid.Row="1" Text="Nome OTB" VerticalAlignment="Center" Margin="2,3,6,3" Foreground="{DynamicResource MutedBrush}" FontSize="9" />
+                                                <TextBox x:Name="ServerItemNameInput" Grid.Row="1" Grid.Column="1" Height="22" Margin="0,2,8,2" Padding="4,1" Background="{DynamicResource PanelAlt}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource BorderBrush}" FontSize="9" TextChanged="ServerItemField_TextChanged" Tag="otbName" />
+                                                <TextBlock x:Name="ServerGroundSpeedLabel" Grid.Row="1" Grid.Column="2" Text="Velocidade do piso" VerticalAlignment="Center" Margin="2,3,6,3" Foreground="{DynamicResource MutedBrush}" FontSize="9" />
+                                                <TextBox x:Name="ServerGroundSpeedInput" Grid.Row="1" Grid.Column="3" Height="22" Margin="0,2,0,2" Padding="4,1" HorizontalContentAlignment="Right" Background="{DynamicResource PanelAlt}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource BorderBrush}" FontSize="9" TextChanged="ServerItemField_TextChanged" Tag="groundSpeed" />
+                                                <TextBlock x:Name="ServerMinimapLabel" Grid.Row="2" Text="Cor do minimapa" VerticalAlignment="Center" Margin="2,3,6,3" Foreground="{DynamicResource MutedBrush}" FontSize="9" />
+                                                <TextBox x:Name="ServerMinimapInput" Grid.Row="2" Grid.Column="1" Height="22" Margin="0,2,8,2" Padding="4,1" HorizontalContentAlignment="Right" Background="{DynamicResource PanelAlt}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource BorderBrush}" FontSize="9" TextChanged="ServerItemField_TextChanged" Tag="minimapColor" />
+                                                <TextBlock x:Name="ServerTradeAsLabel" Grid.Row="2" Grid.Column="2" Text="Trade as" VerticalAlignment="Center" Margin="2,3,6,3" Foreground="{DynamicResource MutedBrush}" FontSize="9" />
+                                                <TextBox x:Name="ServerTradeAsInput" Grid.Row="2" Grid.Column="3" Height="22" Margin="0,2,0,2" Padding="4,1" HorizontalContentAlignment="Right" Background="{DynamicResource PanelAlt}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource BorderBrush}" FontSize="9" TextChanged="ServerItemField_TextChanged" Tag="tradeAs" />
+                                                <TextBlock x:Name="ServerLightLevelLabel" Grid.Row="3" Text="Intensidade da luz" VerticalAlignment="Center" Margin="2,3,6,3" Foreground="{DynamicResource MutedBrush}" FontSize="9" />
+                                                <TextBox x:Name="ServerLightLevelInput" Grid.Row="3" Grid.Column="1" Height="22" Margin="0,2,8,2" Padding="4,1" HorizontalContentAlignment="Right" Background="{DynamicResource PanelAlt}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource BorderBrush}" FontSize="9" TextChanged="ServerItemField_TextChanged" Tag="lightLevel" />
+                                                <TextBlock x:Name="ServerLightColorLabel" Grid.Row="3" Grid.Column="2" Text="Cor da luz" VerticalAlignment="Center" Margin="2,3,6,3" Foreground="{DynamicResource MutedBrush}" FontSize="9" />
+                                                <TextBox x:Name="ServerLightColorInput" Grid.Row="3" Grid.Column="3" Height="22" Margin="0,2,0,2" Padding="4,1" HorizontalContentAlignment="Right" Background="{DynamicResource PanelAlt}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource BorderBrush}" FontSize="9" TextChanged="ServerItemField_TextChanged" Tag="lightColor" />
+                                                <TextBlock x:Name="ServerXmlNameLabel" Grid.Row="4" Text="Nome XML" VerticalAlignment="Center" Margin="2,3,6,3" Foreground="{DynamicResource MutedBrush}" FontSize="9" />
+                                                <TextBox x:Name="ServerXmlNameInput" Grid.Row="4" Grid.Column="1" Height="22" Margin="0,2,8,2" Padding="4,1" Background="{DynamicResource PanelAlt}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource BorderBrush}" FontSize="9" TextChanged="ServerItemField_TextChanged" Tag="xmlName" />
+                                                <TextBlock x:Name="ServerArticleLabel" Grid.Row="4" Grid.Column="2" Text="Artigo" VerticalAlignment="Center" Margin="2,3,6,3" Foreground="{DynamicResource MutedBrush}" FontSize="9" />
+                                                <TextBox x:Name="ServerArticleInput" Grid.Row="4" Grid.Column="3" Height="22" Margin="0,2,0,2" Padding="4,1" Background="{DynamicResource PanelAlt}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource BorderBrush}" FontSize="9" TextChanged="ServerItemField_TextChanged" Tag="article" />
+                                                <TextBlock x:Name="ServerPluralLabel" Grid.Row="5" Text="Plural" VerticalAlignment="Center" Margin="2,3,6,3" Foreground="{DynamicResource MutedBrush}" FontSize="9" />
+                                                <TextBox x:Name="ServerPluralInput" Grid.Row="5" Grid.Column="1" Height="22" Margin="0,2,8,2" Padding="4,1" Background="{DynamicResource PanelAlt}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource BorderBrush}" FontSize="9" TextChanged="ServerItemField_TextChanged" Tag="plural" />
+                                            </Grid>
+                                            <DockPanel Margin="2,8,0,2">
+                                                <TextBlock x:Name="ServerXmlAttributesTitle" Text="Atributos XML" VerticalAlignment="Center" FontSize="9" FontWeight="SemiBold" />
+                                                <Button x:Name="AddXmlAttributeButton" Content="＋ Atributo" DockPanel.Dock="Right" Padding="6,2" FontSize="8" Click="AddXmlAttributeButton_Click" />
+                                            </DockPanel>
+                                            <StackPanel x:Name="ServerXmlAttributesEditor" />
+                                        </StackPanel>
+                                    </Border>
+                                    <TextBlock x:Name="AttributesSaveHint" Text="As alterações são gravadas no DAT pelo botão Salvar DAT." Foreground="{DynamicResource MutedBrush}" FontSize="9" Margin="3,7,0,0" />
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Grid>
+                    </TabItem>
+                </TabControl>
+                <Button x:Name="CanvasExportButton" Content="↓ PNG" Padding="9,5" FontSize="9" Width="62" Height="29"
+                        HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,3,8,0" IsEnabled="False" Click="ExportButton_Click" />
+            </Grid>
+
+            <Border x:Name="ObjectSpritePanel" Grid.Column="3" Background="{DynamicResource PanelBackground}"
+                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1,0,0,0" Visibility="Collapsed">
+                <Grid Margin="8,12,8,10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="34" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="0" Margin="1,0,1,7">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock x:Name="ObjectSpritesTitle" Text="Sprites" FontWeight="SemiBold" FontSize="12" />
+                            <TextBlock x:Name="ObjectSpriteCountText" Text="—" Foreground="{DynamicResource MutedBrush}" FontSize="9" Margin="7,2,0,0" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                            <Button x:Name="ObjectSpriteListButton" Content="Lista" Style="{StaticResource PrimaryButton}" Padding="7,5" FontSize="9" Click="ObjectSpriteListButton_Click" Margin="0,0,4,0" />
+                            <Button x:Name="ObjectSpriteGridButton" Content="Grade" Padding="7,5" FontSize="9" Click="ObjectSpriteGridButton_Click" />
+                        </StackPanel>
+                    </Grid>
+                    <Border Grid.Row="1" Background="{DynamicResource PanelAlt}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="6" Padding="4">
+                        <Grid>
+                            <ScrollViewer x:Name="ObjectSpriteScrollViewer" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                <WrapPanel x:Name="ObjectSpriteGrid" />
+                            </ScrollViewer>
+                            <StackPanel x:Name="ObjectSpriteEmptyState" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="8">
+                                <TextBlock x:Name="ObjectSpriteEmptyTitle" Text="Nenhum SPR aberto" HorizontalAlignment="Center" FontWeight="SemiBold" FontSize="11" TextAlignment="Center" />
+                                <TextBlock x:Name="ObjectSpriteEmptyBody" Text="Abra um SPR para ver os sprites aqui." Foreground="{DynamicResource MutedBrush}" FontSize="9" Margin="0,5,0,0" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Grid x:Name="SpriteAssemblyToolbar" Grid.Row="2" Margin="0,6,0,0" Visibility="Collapsed">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                        <Button x:Name="SelectSpritePageButton" Content="Selecionar página" Padding="4,5" FontSize="8"
+                                Click="SelectSpritePageButton_Click" Margin="1,0,3,0" />
+                        <Button x:Name="AutoAssembleSpritesButton" Grid.Column="1" Content="Montar automaticamente" Style="{StaticResource PrimaryButton}"
+                                Padding="4,5" FontSize="8" Click="AutoAssembleSpritesButton_Click" Margin="3,0,1,0" IsEnabled="False" />
+                    </Grid>
+                    <StackPanel x:Name="SpriteActionToolbar" Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6,0,0" Visibility="Collapsed">
+                        <Button x:Name="NewSpriteButton" Content="＋" Width="37" Height="29" Padding="0" Margin="1,0" FontSize="13" Click="NewSpriteButton_Click" />
+                        <Button x:Name="ReplaceSpriteButton" Content="↻" Width="37" Height="29" Padding="0" Margin="1,0" FontSize="13" Click="ReplaceSpriteButton_Click" />
+                        <Button x:Name="DuplicateSpriteButton" Content="⧉" Width="37" Height="29" Padding="0" Margin="1,0" FontSize="13" Click="DuplicateSpriteButton_Click" />
+                        <Button x:Name="ImportSpriteButton" Content="⇧" Width="37" Height="29" Padding="0" Margin="1,0" FontSize="13" Click="ImportSpriteButton_Click" />
+                        <Button x:Name="ExportSpriteButton" Content="⇩" Width="37" Height="29" Padding="0" Margin="1,0" FontSize="13" Click="ExportSpriteButton_Click" />
+                        <Button x:Name="DeleteSpriteButton" Content="⌫" Width="37" Height="29" Padding="0" Margin="1,0" FontSize="13" Click="DeleteSpriteButton_Click" />
+                    </StackPanel>
+                    <TextBlock x:Name="ObjectSpriteRangeText" Grid.Row="4" Text="—" Foreground="{DynamicResource MutedBrush}" FontSize="8" HorizontalAlignment="Center" Margin="0,6,0,1" />
+                    <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,0">
+                        <Button x:Name="ObjectSpriteFirstButton" Content="|←" Width="29" Padding="3,4" FontSize="9" ToolTip="Primeiro sprite" Click="ObjectSpriteFirstButton_Click" />
+                        <Button x:Name="ObjectSpritePreviousButton" Content="←" Width="29" Padding="3,4" FontSize="9" ToolTip="Sprite anterior" Click="ObjectSpritePreviousButton_Click" Margin="3,0,0,0" />
+                        <TextBox x:Name="ObjectSpriteIdInput" Text="—" Width="72" Height="25" Padding="4,3" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                                 Background="{DynamicResource PanelAlt}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource BorderBrush}" FontSize="9" Margin="5,0"
+                                 LostFocus="ObjectSpriteIdInput_LostFocus" PreviewKeyDown="ObjectSpriteIdInput_PreviewKeyDown" ToolTip="ID do sprite atual" />
+                        <Button x:Name="ObjectSpriteNextButton" Content="→" Width="29" Padding="3,4" FontSize="9" ToolTip="Próximo sprite" Click="ObjectSpriteNextButton_Click" />
+                        <Button x:Name="ObjectSpriteLastButton" Content="→|" Width="29" Padding="3,4" FontSize="9" ToolTip="Último sprite" Click="ObjectSpriteLastButton_Click" Margin="3,0,0,0" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>

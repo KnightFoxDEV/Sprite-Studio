@@ -1,0 +1,166 @@
+<Window x:Class="SpriteStudio.SpriteAssemblyPickerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Montar sprites da SPR" Width="1180" Height="820" MinWidth="960" MinHeight="680"
+        WindowStartupLocation="CenterOwner" WindowState="Maximized" Background="{DynamicResource AppBackground}"
+        Foreground="{DynamicResource TextBrush}" FontFamily="Segoe UI" Icon="Assets/SpriteStudio.png"
+        Loaded="PickerWindow_Loaded" SizeChanged="PickerWindow_SizeChanged">
+    <Grid Margin="18">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0" Margin="2,0,2,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel>
+                <TextBlock x:Name="TitleText" Text="Selecione sprites da SPR" FontSize="19" FontWeight="SemiBold" />
+            <TextBlock x:Name="InstructionsText" Text="Clique nos sprites para selecionar. A lista completa da SPR fica disponível nesta janela."
+                           Foreground="{DynamicResource MutedBrush}" FontSize="11" Margin="0,5,0,0" />
+            </StackPanel>
+            <Border Grid.Column="1" Background="{DynamicResource PanelBackground}" BorderBrush="{DynamicResource BorderBrush}"
+                    BorderThickness="1" CornerRadius="9" Padding="13,9" VerticalAlignment="Center">
+                <TextBlock x:Name="SelectionCountText" Text="0 sprites selecionados" FontSize="11" FontWeight="SemiBold" />
+            </Border>
+        </Grid>
+
+        <Border Grid.Row="1" Background="{DynamicResource PanelBackground}" BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="1" CornerRadius="9" Padding="11" Margin="0,0,0,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="105" />
+                    <ColumnDefinition Width="105" />
+                    <ColumnDefinition Width="120" />
+                    <ColumnDefinition Width="155" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Margin="0,0,9,0">
+                    <TextBlock x:Name="WidthLabel" Text="Largura (sprites)" FontSize="10" Margin="1,0,0,4" />
+                    <TextBox x:Name="WidthInput" Text="1" Height="34" Padding="9,6" VerticalContentAlignment="Center"
+                             Background="{DynamicResource AppBackground}" Foreground="{DynamicResource TextBrush}"
+                             BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" TextChanged="AssemblyDimension_TextChanged" />
+                </StackPanel>
+                <StackPanel Grid.Column="1" Margin="0,0,9,0">
+                    <TextBlock x:Name="HeightLabel" Text="Altura (sprites)" FontSize="10" Margin="1,0,0,4" />
+                    <TextBox x:Name="HeightInput" Text="1" Height="34" Padding="9,6" VerticalContentAlignment="Center"
+                             Background="{DynamicResource AppBackground}" Foreground="{DynamicResource TextBrush}"
+                             BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" TextChanged="AssemblyDimension_TextChanged" />
+                </StackPanel>
+                <StackPanel Grid.Column="2" Margin="0,0,9,0">
+                    <TextBlock x:Name="AnimationCountLabel" Text="Animações" FontSize="10" Margin="1,0,0,4" />
+                    <TextBox x:Name="AnimationCountInput" Text="1" Height="34" Padding="9,6" VerticalContentAlignment="Center"
+                             Background="{DynamicResource AppBackground}" Foreground="{DynamicResource TextBrush}"
+                             BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" TextChanged="AssemblyDimension_TextChanged" />
+                </StackPanel>
+                <StackPanel Grid.Column="3" Margin="0,0,12,0">
+                    <TextBlock x:Name="DestinationLabel" Text="Criar em" FontSize="10" Margin="1,0,0,4" />
+                    <ComboBox x:Name="DestinationCombo" Height="34" Padding="8,5" SelectionChanged="DestinationCombo_SelectionChanged">
+                        <ComboBoxItem Tag="item" Content="Item" />
+                        <ComboBoxItem Tag="effect" Content="Effect" />
+                    </ComboBox>
+                </StackPanel>
+                <StackPanel Grid.Column="4" VerticalAlignment="Center">
+                    <TextBlock x:Name="DimensionFormulaText" Text="Sprites necessários = largura × altura × animações" FontSize="10"
+                               Foreground="{DynamicResource MutedBrush}" />
+                    <TextBlock x:Name="OptionsHintText" Text="Selecione exatamente 1 sprite" FontSize="11" FontWeight="SemiBold" Margin="0,4,0,0" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="2" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="110" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock x:Name="SpriteIdLabel" Text="ID do sprite" VerticalAlignment="Center" Margin="2,0,8,0" />
+            <TextBox x:Name="SpriteIdInput" Grid.Column="1" Text="1" Height="34" Padding="9,6" VerticalContentAlignment="Center"
+                     Background="{DynamicResource PanelBackground}" Foreground="{DynamicResource TextBrush}"
+                     BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                     LostFocus="SpriteIdInput_LostFocus" PreviewKeyDown="SpriteIdInput_PreviewKeyDown" />
+            <Button x:Name="JumpToSpriteButton" Grid.Column="2" Content="Ir para ID" Click="JumpToSpriteButton_Click" Margin="7,0,0,0" />
+            <TextBlock x:Name="SpriteRangeText" Grid.Column="4" Text="Sprites 1–100" VerticalAlignment="Center"
+                       Foreground="{DynamicResource MutedBrush}" Margin="12,0,3,0" />
+        </Grid>
+
+        <Border Grid.Row="3" Background="{DynamicResource PanelBackground}" BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="1" CornerRadius="9" Padding="8">
+            <ListBox x:Name="SpriteRowsList" BorderThickness="0" Background="Transparent"
+                     ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                     ScrollViewer.CanContentScroll="True" VirtualizingPanel.IsVirtualizing="True"
+                     VirtualizingPanel.VirtualizationMode="Standard" VirtualizingPanel.ScrollUnit="Item">
+                <ListBox.ItemsPanel>
+                    <ItemsPanelTemplate><VirtualizingStackPanel /></ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="Padding" Value="0" />
+                        <Setter Property="Margin" Value="0" />
+                        <Setter Property="BorderThickness" Value="0" />
+                        <Setter Property="Background" Value="Transparent" />
+                        <Setter Property="HorizontalContentAlignment" Value="Left" />
+                        <Setter Property="Focusable" Value="False" />
+                    </Style>
+                </ListBox.ItemContainerStyle>
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <ItemsControl ItemsSource="{Binding SpriteIds}" Focusable="False">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Width="145" Height="62" Margin="3" Padding="4" CornerRadius="6"
+                                            BorderThickness="1" Background="{DynamicResource ButtonBackgroundBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                                            Cursor="Hand" Loaded="SpriteCard_Loaded" Unloaded="SpriteCard_Unloaded"
+                                            MouseLeftButtonUp="SpriteCard_MouseLeftButtonUp">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Border Width="52" Height="52" CornerRadius="5" Background="{DynamicResource CardBackgroundBrush}">
+                                                <Image Width="46" Height="46" Stretch="Uniform"
+                                                       RenderOptions.BitmapScalingMode="NearestNeighbor" />
+                                            </Border>
+                                            <TextBlock Text="{Binding}" Foreground="WhiteSmoke" FontSize="11"
+                                                       VerticalAlignment="Center" Margin="9,0,0,0" />
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Border>
+
+        <Grid Grid.Row="4" Margin="0,10,0,0">
+            <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Button x:Name="SelectVisibleButton" Grid.Column="0" Content="Selecionar visíveis" Click="SelectVisibleButton_Click" />
+            <Button x:Name="ClearSelectionButton" Grid.Column="1" Content="Limpar seleção" Click="ClearSelectionButton_Click" Margin="7,0,0,0" />
+            <TextBlock x:Name="ListStatusText" Grid.Column="3" Text="Lista completa" VerticalAlignment="Center"
+                       Foreground="{DynamicResource MutedBrush}" Margin="14,0,2,0" />
+        </Grid>
+
+        <DockPanel Grid.Row="5" Margin="0,14,0,0" LastChildFill="False">
+            <TextBlock x:Name="SelectionHintText" Text="A seleção pode incluir sprites de várias páginas." Foreground="{DynamicResource MutedBrush}"
+                       VerticalAlignment="Center" FontSize="10" DockPanel.Dock="Left" />
+            <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                <Button x:Name="CancelButton" Content="Cancelar" IsCancel="True" MinWidth="110" Margin="0,0,8,0" />
+                <Button x:Name="AssembleButton" Content="Montar (0)" IsDefault="True" IsEnabled="False"
+                        Style="{StaticResource PrimaryButton}" MinWidth="150" Click="AssembleButton_Click" />
+            </StackPanel>
+        </DockPanel>
+    </Grid>
+</Window>

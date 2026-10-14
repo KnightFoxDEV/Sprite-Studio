@@ -1,0 +1,10 @@
+# .NET build outputs and local package caches
+bin/
+obj/
+publish/
+executar aqui/
+.dotnet-cli/
+
+# User-specific IDE files
+*.user
+*.suo

@@ -1,0 +1,76 @@
+<Window x:Class="SpriteStudio.CompileAssetDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Compilar como…" Icon="Assets/SpriteStudio.png" Width="640" Height="700" MinWidth="610" MinHeight="650"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize" ShowInTaskbar="False"
+        Background="{DynamicResource AppBackground}" Foreground="{DynamicResource TextBrush}"
+        FontFamily="Segoe UI" FontSize="12">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <TextBlock Text="Nome:" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,5" />
+                <TextBox x:Name="NameInput" Height="30" Padding="8,5" />
+
+                <TextBlock Text="Pasta de destino:" Foreground="{DynamicResource MutedBrush}" Margin="0,12,0,5" />
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="86" /></Grid.ColumnDefinitions>
+                    <TextBox x:Name="OutputFolderInput" Grid.Column="0" Height="30" Padding="8,5" VerticalContentAlignment="Center" />
+                    <Button Grid.Column="1" Content="Procurar" Click="BrowseOutputButton_Click" Margin="8,0,0,0" Padding="8,4" />
+                </Grid>
+
+                <GroupBox Header="Exportar dados do servidor" Margin="0,13,0,0" Padding="10,8"
+                          BorderBrush="{DynamicResource BorderBrush}" Foreground="{DynamicResource MutedBrush}">
+                    <StackPanel>
+                        <CheckBox x:Name="ServerExportCheckBox" Content="Ativar exportação" Foreground="{DynamicResource TextBrush}"
+                                  Checked="ServerExportCheckBox_Changed" Unchecked="ServerExportCheckBox_Changed" />
+                        <TextBlock x:Name="ServerExportUnavailableText" Text="Abra items.otb para exportar os dados do servidor."
+                                   Foreground="{DynamicResource MutedBrush}" FontSize="10" Margin="0,5,0,0" />
+                        <Grid x:Name="ServerExportFields" Margin="0,8,0,0" IsEnabled="False">
+                            <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="86" /></Grid.ColumnDefinitions>
+                            <TextBlock Text="Arquivo:" VerticalAlignment="Center" Foreground="{DynamicResource TextBrush}" Margin="0,0,9,0" />
+                            <ComboBox x:Name="ServerFileTypeCombo" Grid.Column="1" Height="30" />
+                            <TextBlock Grid.Row="1" Text="Pasta:" VerticalAlignment="Center" Foreground="{DynamicResource TextBrush}" Margin="0,8,9,0" />
+                            <TextBox x:Name="ServerFolderInput" Grid.Row="1" Grid.Column="1" Height="30" Padding="8,5" Margin="0,8,0,0" VerticalContentAlignment="Center" />
+                            <Button Grid.Row="1" Grid.Column="2" Content="Procurar" Click="BrowseServerButton_Click" Margin="8,8,0,0" Padding="8,4" />
+                        </Grid>
+                    </StackPanel>
+                </GroupBox>
+
+                <GroupBox Header="Configurações" Margin="0,13,0,0" Padding="10,8"
+                          BorderBrush="{DynamicResource BorderBrush}" Foreground="{DynamicResource MutedBrush}">
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                        <TextBlock Text="Versão" VerticalAlignment="Center" Foreground="{DynamicResource TextBrush}" Margin="0,0,12,0" />
+                        <ComboBox x:Name="VersionCombo" Grid.Column="1" Height="30" DisplayMemberPath="Name"
+                                  SelectionChanged="VersionCombo_SelectionChanged" />
+                    </Grid>
+                </GroupBox>
+
+                <GroupBox Header="Opções" Margin="0,13,0,0" Padding="10,8"
+                          BorderBrush="{DynamicResource BorderBrush}" Foreground="{DynamicResource MutedBrush}">
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <CheckBox x:Name="ExtendedCheckBox" Content="Extended" IsEnabled="False" Foreground="{DynamicResource TextBrush}" Margin="0,3" />
+                            <CheckBox x:Name="TransparencyCheckBox" Content="Transparência" Foreground="{DynamicResource TextBrush}" Margin="0,3" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                            <CheckBox x:Name="ImprovedAnimationsCheckBox" Content="Animações melhoradas" IsEnabled="False" Foreground="{DynamicResource TextBrush}" Margin="0,3" />
+                            <CheckBox x:Name="FrameGroupsCheckBox" Content="Frame Groups" Foreground="{DynamicResource TextBrush}" Margin="0,3" />
+                        </StackPanel>
+                    </Grid>
+                </GroupBox>
+                <TextBlock x:Name="ValidationText" Foreground="{DynamicResource SoftErrorBrush}" FontSize="11" Margin="2,10,0,0" TextWrapping="Wrap" />
+            </StackPanel>
+        </ScrollViewer>
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
+            <Button Content="Confirmar" Click="ConfirmButton_Click" Style="{StaticResource PrimaryButton}" MinWidth="92" Margin="0,0,8,0" />
+            <Button Content="Cancelar" Click="CancelButton_Click" MinWidth="82" />
+        </StackPanel>
+    </Grid>
+</Window>
