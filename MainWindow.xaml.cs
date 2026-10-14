@@ -2091,6 +2091,7 @@ public partial class MainWindow : Window
         });
         var toggle = new CheckBox
         {
+            Style = (Style)FindResource("PropertySwitchCheckBox"),
             Content = Text(labelPt, labelEn), Tag = key,
             Foreground = (Brush)FindResource("TextBrush"), FontSize = 9, Margin = new Thickness(1, 2, 0, 2)
         };
@@ -2141,6 +2142,7 @@ public partial class MainWindow : Window
         var content = new StackPanel();
         var toggle = new CheckBox
         {
+            Style = (Style)FindResource("PropertySwitchCheckBox"),
             Content = Text(titlePt, titleEn), Tag = key, Foreground = (Brush)FindResource("TextBrush"),
             FontSize = 9, Margin = new Thickness(0, 0, 0, 4)
         };
@@ -2344,6 +2346,7 @@ public partial class MainWindow : Window
     {
         var checkBox = new CheckBox
         {
+            Style = (Style)FindResource("PropertySwitchCheckBox"),
             Content = Text(labelPt, labelEn), Tag = key, Foreground = (Brush)FindResource("TextBrush"),
             FontSize = 9, Margin = new Thickness(1, 3, 0, 3)
         };

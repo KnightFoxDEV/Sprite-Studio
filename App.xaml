@@ -38,6 +38,68 @@
         <SolidColorBrush x:Key="WarningBrush" po:Freeze="False" Color="#E6B876" />
         <SolidColorBrush x:Key="ErrorBrush" po:Freeze="False" Color="#F2A59B" />
         <SolidColorBrush x:Key="SoftErrorBrush" po:Freeze="False" Color="#FF9D86" />
+        <Style x:Key="PropertySwitchCheckBox" TargetType="{x:Type CheckBox}">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type CheckBox}">
+                        <Grid Background="Transparent" MinHeight="22" SnapsToDevicePixels="True">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="36" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Border x:Name="SwitchTrack" Width="36" Height="20" CornerRadius="10"
+                                    Background="{DynamicResource PanelAlt}" BorderBrush="{DynamicResource BorderBrush}"
+                                    BorderThickness="1" VerticalAlignment="Center" HorizontalAlignment="Left">
+                                <Ellipse x:Name="SwitchThumb" Width="16" Height="16" Margin="1"
+                                         Fill="{DynamicResource AppBackground}" VerticalAlignment="Center" HorizontalAlignment="Left">
+                                    <Ellipse.RenderTransform>
+                                        <TranslateTransform x:Name="SwitchThumbTransform" X="0" />
+                                    </Ellipse.RenderTransform>
+                                </Ellipse>
+                            </Border>
+                            <ContentPresenter Grid.Column="1" ContentSource="Content" RecognizesAccessKey="True"
+                                              VerticalAlignment="Center" Margin="7,0,0,0" />
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="SwitchTrack" Property="Background" Value="{DynamicResource AccentBrush}" />
+                                <Setter TargetName="SwitchTrack" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                                <Setter TargetName="SwitchThumb" Property="Fill" Value="{DynamicResource AccentTextBrush}" />
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="SwitchThumbTransform" Storyboard.TargetProperty="X"
+                                                             To="16" Duration="0:0:0.12" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="SwitchThumbTransform" Storyboard.TargetProperty="X"
+                                                             To="0" Duration="0:0:0.12" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="SwitchTrack" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="SwitchTrack" Property="BorderBrush" Value="{DynamicResource TextBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="SwitchTrack" Property="Opacity" Value="0.5" />
+                                <Setter TargetName="SwitchThumb" Property="Opacity" Value="0.65" />
+                                <Setter TargetName="SwitchTrack" Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
         <Style TargetType="ScrollBar">
             <Setter Property="Focusable" Value="False" />
             <Setter Property="Template">
