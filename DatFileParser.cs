@@ -15,7 +15,7 @@ internal sealed record DatThing(uint Id, string Category, IReadOnlyList<DatFrame
     public int Width => PreviewGroup?.Width ?? 0;
     public int Height => PreviewGroup?.Height ?? 0;
 }
-internal sealed record DatFileModel(uint Signature, string VersionName, int VersionValue, ushort ItemCount, ushort OutfitCount, ushort EffectCount, ushort MissileCount, IReadOnlyList<DatThing> Things, bool Extended, bool ImprovedAnimations, bool FrameGroups);
+internal sealed record DatFileModel(uint Signature, string VersionName, int VersionValue, ushort ItemCount, ushort OutfitCount, ushort EffectCount, ushort MissileCount, IReadOnlyList<DatThing> Things, bool Extended, bool ImprovedAnimations, bool FrameGroups, int MetadataReaderVersion);
 internal sealed record DatTargetVersion(int Value, string Name, uint DatSignature, uint SprSignature);
 
 internal static class ClientVersionCatalog
@@ -80,21 +80,58 @@ internal static class DatFileParser
         var outfitCount = ReadUInt16(reader);
         var effectCount = ReadUInt16(reader);
         var missileCount = ReadUInt16(reader);
-        var readerVersion = versionValue <= 730 ? 1 : versionValue <= 750 ? 2 : versionValue <= 772 ? 3 : versionValue <= 854 ? 4 : versionValue <= 986 ? 5 : 6;
+        var readerVersion = DatPropertiesCodec.ReaderVersion(versionValue);
         var defaults = ReadFormatOptions(path, versionValue);
-        var extended = extendedOverride ?? defaults.Extended;
-        var improvedAnimations = improvedAnimationsOverride ?? defaults.ImprovedAnimations;
-        var frameGroups = frameGroupsOverride ?? defaults.FrameGroups;
-        var things = new List<DatThing>(Math.Min(100_000, itemCount + outfitCount + effectCount + missileCount));
+        var hasExplicitFormatOptions = extendedOverride.HasValue || improvedAnimationsOverride.HasValue || frameGroupsOverride.HasValue;
+        var formatCandidates = GetFormatCandidates(defaults, versionValue, extendedOverride, improvedAnimationsOverride, frameGroupsOverride, hasExplicitFormatOptions);
+        var layoutStart = stream.Position;
+        IReadOnlyList<DatThing>? things = null;
+        var selectedReaderVersion = readerVersion;
+        var selectedFormat = formatCandidates[0];
+        var primaryError = default(Exception);
+        var readerCandidates = new[] { readerVersion }.Concat(Enumerable.Range(1, 6).Where(candidate => candidate != readerVersion));
+        foreach (var candidate in readerCandidates)
+        {
+            foreach (var format in formatCandidates)
+            {
+                try
+                {
+                    things = ParseThings(data, layoutStart, itemCount, outfitCount, effectCount, missileCount,
+                        candidate, readerVersion, format.Extended, format.ImprovedAnimations, format.FrameGroups);
+                    selectedReaderVersion = candidate;
+                    selectedFormat = format;
+                    break;
+                }
+                catch (Exception ex) when (ex is InvalidDataException or EndOfStreamException or OverflowException or ArgumentOutOfRangeException)
+                {
+                    primaryError ??= ex;
+                }
+            }
+            if (things is not null) break;
+        }
 
-        ReadThings(reader, things, 100, itemCount, "item", readerVersion, extended, improvedAnimations, frameGroups);
-        ReadThings(reader, things, 1, outfitCount, "outfit", readerVersion, extended, improvedAnimations, frameGroups);
-        ReadThings(reader, things, 1, effectCount, "effect", readerVersion, extended, improvedAnimations, frameGroups);
-        ReadThings(reader, things, 1, missileCount, "missile", readerVersion, extended, improvedAnimations, frameGroups);
+        if (things is null)
+            throw new InvalidDataException(primaryError?.Message ?? "The DAT metadata could not be read.", primaryError);
+
+        return new DatFileModel(signature, versionName, versionValue, itemCount, outfitCount, effectCount, missileCount,
+            things, selectedFormat.Extended, selectedFormat.ImprovedAnimations, selectedFormat.FrameGroups, selectedReaderVersion);
+    }
+
+    private static IReadOnlyList<DatThing> ParseThings(byte[] data, long startPosition,
+        ushort itemCount, ushort outfitCount, ushort effectCount, ushort missileCount,
+        int propertyReaderVersion, int textureLayoutVersion, bool extended, bool improvedAnimations, bool frameGroups)
+    {
+        using var stream = new MemoryStream(data, writable: false);
+        stream.Position = startPosition;
+        using var reader = new BinaryReader(stream);
+        var things = new List<DatThing>(Math.Min(100_000, itemCount + outfitCount + effectCount + missileCount));
+        ReadThings(reader, things, 100, itemCount, "item", textureLayoutVersion, propertyReaderVersion, extended, improvedAnimations, frameGroups);
+        ReadThings(reader, things, 1, outfitCount, "outfit", textureLayoutVersion, propertyReaderVersion, extended, improvedAnimations, frameGroups);
+        ReadThings(reader, things, 1, effectCount, "effect", textureLayoutVersion, propertyReaderVersion, extended, improvedAnimations, frameGroups);
+        ReadThings(reader, things, 1, missileCount, "missile", textureLayoutVersion, propertyReaderVersion, extended, improvedAnimations, frameGroups);
         if (stream.Position != stream.Length)
             throw new InvalidDataException($"The DAT parser stopped at byte {stream.Position:N0} of {stream.Length:N0}. The selected client version may not match this file.");
-
-        return new DatFileModel(signature, versionName, versionValue, itemCount, outfitCount, effectCount, missileCount, things, extended, improvedAnimations, frameGroups);
+        return things;
     }
 
     private static (bool Extended, bool ImprovedAnimations, bool FrameGroups) ReadFormatOptions(string datPath, int versionValue)
@@ -123,16 +160,50 @@ internal static class DatFileParser
             options[key] = enabled;
         }
 
-        return (options["extended"], options["frame-durations"], options["frame-groups"]);
+        // ObjectBuilder reapplies required features after reading OTFI. A stale
+        // OTFI file cannot disable a feature that is mandatory for the client version.
+        return (
+            Extended: options["extended"] || versionValue >= 960,
+            ImprovedAnimations: options["frame-durations"] || versionValue >= 1050,
+            FrameGroups: options["frame-groups"] || versionValue >= 1057);
+    }
+
+    private static IReadOnlyList<(bool Extended, bool ImprovedAnimations, bool FrameGroups)> GetFormatCandidates(
+        (bool Extended, bool ImprovedAnimations, bool FrameGroups) defaults, int versionValue,
+        bool? extendedOverride, bool? improvedAnimationsOverride, bool? frameGroupsOverride, bool hasExplicitOptions)
+    {
+        if (hasExplicitOptions)
+            return new[] { (
+                Extended: extendedOverride ?? defaults.Extended,
+                ImprovedAnimations: improvedAnimationsOverride ?? defaults.ImprovedAnimations,
+                FrameGroups: frameGroupsOverride ?? defaults.FrameGroups) };
+
+        return Enumerable.Range(0, 8)
+            .Select(mask => (
+                Extended: defaults.Extended ^ ((mask & 1) != 0),
+                ImprovedAnimations: defaults.ImprovedAnimations ^ ((mask & 2) != 0),
+                FrameGroups: defaults.FrameGroups ^ ((mask & 4) != 0)))
+            .Where(candidate =>
+                (versionValue < 960 || candidate.Extended)
+                && (versionValue < 1050 || candidate.ImprovedAnimations)
+                && (versionValue < 1057 || candidate.FrameGroups))
+            .OrderBy(candidate =>
+                (candidate.Extended == defaults.Extended ? 0 : 1)
+                + (candidate.ImprovedAnimations == defaults.ImprovedAnimations ? 0 : 1)
+                + (candidate.FrameGroups == defaults.FrameGroups ? 0 : 1))
+            .ThenBy(candidate => candidate.Extended == defaults.Extended ? 0 : 1)
+            .ThenBy(candidate => candidate.ImprovedAnimations == defaults.ImprovedAnimations ? 0 : 1)
+            .ThenBy(candidate => candidate.FrameGroups == defaults.FrameGroups ? 0 : 1)
+            .ToArray();
     }
 
     private static void ReadThings(BinaryReader reader, List<DatThing> things, uint firstId, uint lastId, string category,
-        int readerVersion, bool extended, bool improvedAnimations, bool frameGroups)
+        int readerVersion, int propertyReaderVersion, bool extended, bool improvedAnimations, bool frameGroups)
     {
         if (lastId < firstId) return;
         for (var id = firstId; id <= lastId; id++)
         {
-            var rawProperties = SkipProperties(reader, readerVersion, category, id);
+            var rawProperties = SkipProperties(reader, propertyReaderVersion, category, id);
             var groups = category == "outfit" && frameGroups ? ReadByte(reader) : 1;
             var frameGroupList = new List<DatFrameGroup>(groups);
             var spriteCount = 0;
@@ -201,6 +272,7 @@ internal static class DatFileParser
         var start = reader.BaseStream.Position;
         for (var guard = 0; guard < 256; guard++)
         {
+            var flagOffset = reader.BaseStream.Position;
             var flag = ReadByte(reader);
             if (flag == 0xFF)
             {
@@ -210,7 +282,17 @@ internal static class DatFileParser
                 if (bytes.Length != length) throw new EndOfStreamException();
                 return bytes;
             }
-            var payloadBytes = PropertyPayloadBytes(flag, readerVersion, reader);
+            int payloadBytes;
+            try
+            {
+                payloadBytes = PropertyPayloadBytes(flag, readerVersion, reader);
+            }
+            catch (InvalidDataException ex) when (ex.Message.StartsWith("Unknown DAT property ", StringComparison.Ordinal))
+            {
+                throw new InvalidDataException(
+                    $"{ex.Message} Thing {category} #{id}, byte offset {flagOffset:N0}.",
+                    ex);
+            }
             if (payloadBytes > 0) Skip(reader, payloadBytes);
         }
         throw new InvalidDataException($"An object has an invalid property list in {category} {id} at byte {reader.BaseStream.Position:N0}.");

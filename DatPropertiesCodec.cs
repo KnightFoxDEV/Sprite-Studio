@@ -18,9 +18,12 @@ internal static class DatPropertiesCodec
         : clientVersion <= 854 ? 4
         : clientVersion <= 986 ? 5 : 6;
 
-    public static IReadOnlyDictionary<string, DatPropertyField> Read(byte[] raw, int clientVersion)
+    private static int ResolveReaderVersion(int clientVersion, int? readerVersionOverride) =>
+        readerVersionOverride is >= 1 and <= 6 ? readerVersionOverride.Value : ReaderVersion(clientVersion);
+
+    public static IReadOnlyDictionary<string, DatPropertyField> Read(byte[] raw, int clientVersion, int? readerVersionOverride = null)
     {
-        var readerVersion = ReaderVersion(clientVersion);
+        var readerVersion = ResolveReaderVersion(clientVersion, readerVersionOverride);
         var descriptors = Descriptors(readerVersion);
         var fields = descriptors.ToDictionary(pair => pair.Key,
             pair => new DatPropertyField(false, pair.Value.Defaults.ToArray(), string.Empty), StringComparer.Ordinal);
@@ -33,17 +36,18 @@ internal static class DatPropertiesCodec
         return fields;
     }
 
-    public static bool Supports(int clientVersion, string key) => Descriptors(ReaderVersion(clientVersion)).ContainsKey(key);
+    public static bool Supports(int clientVersion, string key, int? readerVersionOverride = null) =>
+        Descriptors(ResolveReaderVersion(clientVersion, readerVersionOverride)).ContainsKey(key);
 
-    public static bool HasEditableValues(int clientVersion, string key) =>
-        !(ReaderVersion(clientVersion) <= 2 && key == "offset");
+    public static bool HasEditableValues(int clientVersion, string key, int? readerVersionOverride = null) =>
+        !(ResolveReaderVersion(clientVersion, readerVersionOverride) <= 2 && key == "offset");
 
     public static DatPropertyField Get(IReadOnlyDictionary<string, DatPropertyField> fields, string key) =>
         fields.TryGetValue(key, out var field) ? field : new DatPropertyField(false, [], string.Empty);
 
-    public static byte[] Set(byte[] raw, int clientVersion, string key, DatPropertyField field)
+    public static byte[] Set(byte[] raw, int clientVersion, string key, DatPropertyField field, int? readerVersionOverride = null)
     {
-        var readerVersion = ReaderVersion(clientVersion);
+        var readerVersion = ResolveReaderVersion(clientVersion, readerVersionOverride);
         var descriptors = Descriptors(readerVersion);
         if (!descriptors.TryGetValue(key, out var descriptor))
             throw new InvalidOperationException($"The {key} DAT property is not available in metadata reader {readerVersion}.");
@@ -54,9 +58,9 @@ internal static class DatPropertiesCodec
         return Serialize(properties);
     }
 
-    public static byte[] SetRenderOrder(byte[] raw, int clientVersion, string key)
+    public static byte[] SetRenderOrder(byte[] raw, int clientVersion, string key, int? readerVersionOverride = null)
     {
-        var readerVersion = ReaderVersion(clientVersion);
+        var readerVersion = ResolveReaderVersion(clientVersion, readerVersionOverride);
         var descriptors = Descriptors(readerVersion);
         var renderKeys = new[] { "groundBorder", "onBottom", "onTop" };
         var renderFlags = renderKeys.Where(descriptors.ContainsKey).Select(item => descriptors[item].Flag).ToHashSet();
@@ -70,9 +74,9 @@ internal static class DatPropertiesCodec
         return Serialize(properties);
     }
 
-    public static byte[] ConvertToClientVersion(byte[] raw, int sourceVersion, int targetVersion)
+    public static byte[] ConvertToClientVersion(byte[] raw, int sourceVersion, int targetVersion, int? sourceReaderVersionOverride = null)
     {
-        var sourceFields = Read(raw, sourceVersion);
+        var sourceFields = Read(raw, sourceVersion, sourceReaderVersionOverride);
         var targetDescriptors = Descriptors(ReaderVersion(targetVersion));
         var properties = new List<DatRawProperty>();
         var renderOrder = new[] { "ground", "groundBorder", "onBottom", "onTop" };

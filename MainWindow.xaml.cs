@@ -2223,7 +2223,7 @@ public partial class MainWindow : Window
     {
         if (_selectedThing is null || _datModel is null
             || sender is not Button { Tag: PropertyColorSwatchBinding binding }) return;
-        var fields = DatPropertiesCodec.Read(_selectedThing.RawProperties, _datModel.VersionValue);
+        var fields = DatPropertiesCodec.Read(_selectedThing.RawProperties, _datModel.VersionValue, _datModel.MetadataReaderVersion);
         var field = DatPropertiesCodec.Get(fields, binding.Key);
         if (binding.ValueIndex < 0 || binding.ValueIndex >= field.Values.Length) return;
         var values = field.Values.ToArray();
@@ -2369,7 +2369,7 @@ public partial class MainWindow : Window
         UpdateServerItemEditor();
         if (!hasProperties || _selectedThing is null || _datModel is null) return;
 
-        var fields = DatPropertiesCodec.Read(_selectedThing.RawProperties, version);
+        var fields = DatPropertiesCodec.Read(_selectedThing.RawProperties, version, _datModel.MetadataReaderVersion);
         _updatingAttributeControls = true;
         try
         {
@@ -2382,7 +2382,7 @@ public partial class MainWindow : Window
                         : isEffect
                             ? key is "light" or "bones" or "topEffect"
                             : key is "light" or "bones";
-                var supported = appliesToCategory && DatPropertiesCodec.Supports(version, key);
+                var supported = appliesToCategory && DatPropertiesCodec.Supports(version, key, _datModel.MetadataReaderVersion);
                 section.Visibility = supported ? Visibility.Visible : Visibility.Collapsed;
                 var field = DatPropertiesCodec.Get(fields, key);
                 var toggle = _propertyToggles[key];
@@ -2398,7 +2398,7 @@ public partial class MainWindow : Window
                         input.Text = binding.TextValue ? field.Text
                             : valueIndex >= 0 && valueIndex < field.Values.Length ? field.Values[valueIndex].ToString() : "0";
                         input.IsEnabled = canEdit && supported && field.Enabled
-                            && (binding.TextValue || DatPropertiesCodec.HasEditableValues(version, key));
+                            && (binding.TextValue || DatPropertiesCodec.HasEditableValues(version, key, _datModel.MetadataReaderVersion));
                     }
                 }
 
@@ -2443,7 +2443,7 @@ public partial class MainWindow : Window
                 : DatPropertiesCodec.Get(fields, "onTop").Enabled ? "onTop" : "common";
             foreach (var (key, radio) in _renderOrderControls)
             {
-                var supported = key == "common" || DatPropertiesCodec.Supports(version, key);
+                var supported = key == "common" || DatPropertiesCodec.Supports(version, key, _datModel.MetadataReaderVersion);
                 radio.Visibility = supported ? Visibility.Visible : Visibility.Collapsed;
                 radio.IsEnabled = canEdit && supported;
                 radio.IsChecked = key == order;
@@ -2451,7 +2451,7 @@ public partial class MainWindow : Window
 
             foreach (var (key, control) in _attributeFlagControls)
             {
-                var supported = DatPropertiesCodec.Supports(version, key);
+                var supported = DatPropertiesCodec.Supports(version, key, _datModel.MetadataReaderVersion);
                 control.Visibility = supported ? Visibility.Visible : Visibility.Collapsed;
                 control.IsEnabled = canEdit && supported;
                 control.IsChecked = DatPropertiesCodec.Get(fields, key).Enabled;
@@ -2459,7 +2459,7 @@ public partial class MainWindow : Window
 
             foreach (var ((key, valueIndex), button) in _propertyColorButtons)
             {
-                var supported = DatPropertiesCodec.Supports(version, key);
+                var supported = DatPropertiesCodec.Supports(version, key, _datModel.MetadataReaderVersion);
                 var field = DatPropertiesCodec.Get(fields, key);
                 var value = valueIndex >= 0 && valueIndex < field.Values.Length ? field.Values[valueIndex] : 0;
                 button.Background = new SolidColorBrush(EightBitColor(Math.Clamp(value, 0, 215)));
@@ -2618,7 +2618,7 @@ public partial class MainWindow : Window
     {
         if (_updatingAttributeControls || sender is not CheckBox { Tag: string key, IsChecked: bool isChecked }
             || _selectedThing is null || _datModel is null) return;
-        var fields = DatPropertiesCodec.Read(_selectedThing.RawProperties, _datModel.VersionValue);
+        var fields = DatPropertiesCodec.Read(_selectedThing.RawProperties, _datModel.VersionValue, _datModel.MetadataReaderVersion);
         var field = DatPropertiesCodec.Get(fields, key);
         StoreSelectedProperty(key, field with { Enabled = isChecked });
         UpdateItemAttributeEditor();
@@ -2628,7 +2628,7 @@ public partial class MainWindow : Window
     {
         if (_updatingAttributeControls || sender is not CheckBox { Tag: string key, IsChecked: bool isChecked }
             || _selectedThing is null || _datModel is null) return;
-        var fields = DatPropertiesCodec.Read(_selectedThing.RawProperties, _datModel.VersionValue);
+        var fields = DatPropertiesCodec.Read(_selectedThing.RawProperties, _datModel.VersionValue, _datModel.MetadataReaderVersion);
         var field = DatPropertiesCodec.Get(fields, key);
         StoreSelectedProperty(key, field with { Enabled = isChecked });
     }
@@ -2637,7 +2637,7 @@ public partial class MainWindow : Window
     {
         if (_updatingAttributeControls || sender is not RadioButton { Tag: string key, IsChecked: true }
             || _selectedThing is null || _datModel is null) return;
-        var raw = DatPropertiesCodec.SetRenderOrder(_selectedThing.RawProperties, _datModel.VersionValue, key);
+        var raw = DatPropertiesCodec.SetRenderOrder(_selectedThing.RawProperties, _datModel.VersionValue, key, _datModel.MetadataReaderVersion);
         StoreSelectedRawProperties(raw);
         UpdateItemAttributeEditor();
     }
@@ -2646,7 +2646,7 @@ public partial class MainWindow : Window
     {
         if (_updatingAttributeControls || sender is not TextBox { Tag: PropertyInputBinding binding }
             || _selectedThing is null || _datModel is null) return;
-        var fields = DatPropertiesCodec.Read(_selectedThing.RawProperties, _datModel.VersionValue);
+        var fields = DatPropertiesCodec.Read(_selectedThing.RawProperties, _datModel.VersionValue, _datModel.MetadataReaderVersion);
         var field = DatPropertiesCodec.Get(fields, binding.Key);
         if (binding.TextValue)
         {
@@ -2679,7 +2679,7 @@ public partial class MainWindow : Window
         if (_updatingAttributeControls || sender is not ComboBox { Tag: PropertyComboBinding binding }
             || binding.Key == "bonesDirection" || _selectedThing is null || _datModel is null
             || ((ComboBox)sender).SelectedItem is not ComboBoxItem { Tag: int value }) return;
-        var fields = DatPropertiesCodec.Read(_selectedThing.RawProperties, _datModel.VersionValue);
+        var fields = DatPropertiesCodec.Read(_selectedThing.RawProperties, _datModel.VersionValue, _datModel.MetadataReaderVersion);
         var field = DatPropertiesCodec.Get(fields, binding.Key);
         if (binding.ValueIndex < 0 || binding.ValueIndex >= field.Values.Length) return;
         var values = field.Values.ToArray();
@@ -2691,7 +2691,7 @@ public partial class MainWindow : Window
     {
         if (_updatingAttributeControls) return;
         var fields = _selectedThing is not null && _datModel is not null
-            ? DatPropertiesCodec.Read(_selectedThing.RawProperties, _datModel.VersionValue) : null;
+            ? DatPropertiesCodec.Read(_selectedThing.RawProperties, _datModel.VersionValue, _datModel.MetadataReaderVersion) : null;
         if (fields is null) return;
         var bones = DatPropertiesCodec.Get(fields, "bones");
         _updatingAttributeControls = true;
@@ -2712,7 +2712,7 @@ public partial class MainWindow : Window
         if (_selectedThing is null || _datModel is null) return;
         try
         {
-            var raw = DatPropertiesCodec.Set(_selectedThing.RawProperties, _datModel.VersionValue, key, field);
+            var raw = DatPropertiesCodec.Set(_selectedThing.RawProperties, _datModel.VersionValue, key, field, _datModel.MetadataReaderVersion);
             StoreSelectedRawProperties(raw);
         }
         catch (Exception ex) when (ex is InvalidDataException or OverflowException or ArgumentException)
@@ -6160,7 +6160,7 @@ public partial class MainWindow : Window
     private void CopyThingPropertyGroup(DatThing thing, bool attributes)
     {
         if (_datModel is null || thing.Category != "item") return;
-        var fields = DatPropertiesCodec.Read(thing.RawProperties, _datModel.VersionValue);
+        var fields = DatPropertiesCodec.Read(thing.RawProperties, _datModel.VersionValue, _datModel.MetadataReaderVersion);
         var attributeKeys = _attributeFlagControls.Keys.Concat(["groundBorder", "onBottom", "onTop"]).ToHashSet(StringComparer.Ordinal);
         var copied = fields.Where(entry => entry.Key != "groundBorder" && entry.Key != "onBottom" && entry.Key != "onTop"
                 && attributeKeys.Contains(entry.Key) == attributes)
@@ -6191,7 +6191,7 @@ public partial class MainWindow : Window
     private void ApplyThingPropertyGroupToSelection(DatThing source, bool attributes)
     {
         if (_datModel is null || source.Category != "item") return;
-        var fields = DatPropertiesCodec.Read(source.RawProperties, _datModel.VersionValue);
+        var fields = DatPropertiesCodec.Read(source.RawProperties, _datModel.VersionValue, _datModel.MetadataReaderVersion);
         var attributeKeys = _attributeFlagControls.Keys.Concat(["groundBorder", "onBottom", "onTop"]).ToHashSet(StringComparer.Ordinal);
         var copied = fields.Where(entry => entry.Key != "groundBorder" && entry.Key != "onBottom" && entry.Key != "onTop"
                 && attributeKeys.Contains(entry.Key) == attributes)
@@ -6208,9 +6208,10 @@ public partial class MainWindow : Window
     {
         var result = (byte[])raw.Clone();
         if (_datModel is null) return result;
-        if (renderOrder is not null) result = DatPropertiesCodec.SetRenderOrder(result, _datModel.VersionValue, renderOrder);
+        if (renderOrder is not null) result = DatPropertiesCodec.SetRenderOrder(result, _datModel.VersionValue, renderOrder, _datModel.MetadataReaderVersion);
         foreach (var (key, field) in copied)
-            if (DatPropertiesCodec.Supports(_datModel.VersionValue, key)) result = DatPropertiesCodec.Set(result, _datModel.VersionValue, key, field);
+            if (DatPropertiesCodec.Supports(_datModel.VersionValue, key, _datModel.MetadataReaderVersion))
+                result = DatPropertiesCodec.Set(result, _datModel.VersionValue, key, field, _datModel.MetadataReaderVersion);
         return result;
     }
 
@@ -6231,8 +6232,8 @@ public partial class MainWindow : Window
         if (_datModel is null || pair.Count != 2) return;
         var first = pair[0];
         var second = pair[1];
-        var firstProperties = DatPropertiesCodec.Read(first.RawProperties, _datModel.VersionValue);
-        var secondProperties = DatPropertiesCodec.Read(second.RawProperties, _datModel.VersionValue);
+        var firstProperties = DatPropertiesCodec.Read(first.RawProperties, _datModel.VersionValue, _datModel.MetadataReaderVersion);
+        var secondProperties = DatPropertiesCodec.Read(second.RawProperties, _datModel.VersionValue, _datModel.MetadataReaderVersion);
         var changedProperties = firstProperties.Keys.Union(secondProperties.Keys, StringComparer.Ordinal)
             .Where(key =>
             {
