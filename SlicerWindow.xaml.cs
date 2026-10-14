@@ -779,7 +779,7 @@ public partial class SlicerWindow : Window
         if (!_canImport())
         {
             MessageBox.Show(this,
-                Text("Abra um arquivo SPR no Sprite Studio antes de importar.", "Open an SPR file in Sprite Studio before importing."),
+                Text("Abra um arquivo SPR no Editor Universe antes de importar.", "Open an SPR file in Editor Universe before importing."),
                 "Slicer", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }

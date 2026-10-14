@@ -1,4 +1,4 @@
-# Sprite Studio
+# Editor Universe
 
 Editor desktop para Windows, feito em C# e WPF. Este guia descreve como compilar o aplicativo a partir do código-fonte.
 
@@ -48,4 +48,4 @@ O aplicativo publicado fica em `publish\win-x64\SpriteStudio.exe` e pode rodar e
 - **SharpCompress 0.50.4**, restaurado automaticamente do NuGet durante a compilação.
 - Recursos incluídos nesta pasta: `Assets` e `config/versions.xml`.
 
-Este repositório contém o código-fonte do Sprite Studio.
+Este repositório contém o código-fonte do Editor Universe.

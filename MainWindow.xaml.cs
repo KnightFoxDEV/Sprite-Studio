@@ -356,7 +356,7 @@ public partial class MainWindow : Window
         SpritesCountLabel.Text = Text("Sprites:", "Sprites:");
         CategorySectionLabel.Text = Text("Categoria", "Category");
         InfoPreviewEmptyText.Text = Text("Selecione um objeto", "Select an object");
-        Eyebrow.Text = Text("SPRITE STUDIO", "SPRITE STUDIO");
+        Eyebrow.Text = Text("EDITOR UNIVERSE", "EDITOR UNIVERSE");
         TitleText.Text = Text("Editor de sprites", "Sprite editor");
         DropTitle.Text = Text("Abra a pasta do cliente Tibia", "Open your Tibia client folder");
         DropText.Text = Text("O programa encontra DAT e SPR e também pode carregar items.otb/items.xml.", "The app finds DAT and SPR and can also load items.otb/items.xml.");
@@ -3257,7 +3257,7 @@ public partial class MainWindow : Window
         var dialog = new OpenFileDialog
         {
             Title = Text("Escolher objeto exportado para substituir", "Choose an exported object to replace the selection"),
-            Filter = "Objetos OBD ou DAT do Sprite Studio (*.obd;*.json)|*.obd;*.json|Objeto OBD (*.obd)|*.obd|Objeto DAT do Sprite Studio (*.json)|*.json|Todos os arquivos (*.*)|*.*",
+            Filter = "Objetos OBD ou DAT do Editor Universe (*.obd;*.json)|*.obd;*.json|Objeto OBD (*.obd)|*.obd|Objeto DAT do Editor Universe (*.json)|*.json|Todos os arquivos (*.*)|*.*",
             CheckFileExists = true
         };
         if (dialog.ShowDialog(this) != true) return;
@@ -3296,7 +3296,7 @@ public partial class MainWindow : Window
         var dialog = new OpenFileDialog
         {
             Title = Text("Importar objeto OBD ou DAT", "Import an OBD or DAT object"),
-            Filter = "Objetos OBD ou DAT do Sprite Studio (*.obd;*.json)|*.obd;*.json|Objeto OBD (*.obd)|*.obd|Objeto DAT do Sprite Studio (*.json)|*.json|Todos os arquivos (*.*)|*.*",
+            Filter = "Objetos OBD ou DAT do Editor Universe (*.obd;*.json)|*.obd;*.json|Objeto OBD (*.obd)|*.obd|Objeto DAT do Editor Universe (*.json)|*.json|Todos os arquivos (*.*)|*.*",
             CheckFileExists = true
         };
         if (dialog.ShowDialog(this) != true) return;
@@ -3476,7 +3476,7 @@ public partial class MainWindow : Window
             FileName = multiple ? $"{things[0].Category}-{things[0].Id}-{things[^1].Id}.zip" : $"{things[0].Category}-{things[0].Id}.json",
             Filter = multiple
                 ? Text("Pacote de objetos DAT (*.zip)|*.zip", "DAT object package (*.zip)|*.zip")
-                : Text("Objeto DAT do Sprite Studio (*.json)|*.json", "Sprite Studio DAT object (*.json)|*.json"),
+                : Text("Objeto DAT do Editor Universe (*.json)|*.json", "Editor Universe DAT object (*.json)|*.json"),
             AddExtension = true, DefaultExt = multiple ? ".zip" : ".json"
         };
         if (dialog.ShowDialog(this) != true) return;

@@ -6,6 +6,8 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>SpriteStudio</AssemblyName>
+    <AssemblyTitle>Editor Universe</AssemblyTitle>
+    <Product>Editor Universe</Product>
     <RootNamespace>SpriteStudio</RootNamespace>
     <ApplicationIcon>Assets\SpriteStudio.ico</ApplicationIcon>
   </PropertyGroup>
