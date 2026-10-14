@@ -1,0 +1,1 @@
+executar[[:space:]]aqui/SpriteStudio.exe filter=lfs diff=lfs merge=lfs -text

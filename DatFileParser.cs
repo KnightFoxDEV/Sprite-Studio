@@ -15,7 +15,7 @@ internal sealed record DatThing(uint Id, string Category, IReadOnlyList<DatFrame
     public int Width => PreviewGroup?.Width ?? 0;
     public int Height => PreviewGroup?.Height ?? 0;
 }
-internal sealed record DatFileModel(uint Signature, string VersionName, int VersionValue, ushort ItemCount, ushort OutfitCount, ushort EffectCount, ushort MissileCount, IReadOnlyList<DatThing> Things);
+internal sealed record DatFileModel(uint Signature, string VersionName, int VersionValue, ushort ItemCount, ushort OutfitCount, ushort EffectCount, ushort MissileCount, IReadOnlyList<DatThing> Things, bool Extended, bool ImprovedAnimations, bool FrameGroups);
 internal sealed record DatTargetVersion(int Value, string Name, uint DatSignature, uint SprSignature);
 
 internal static class ClientVersionCatalog
@@ -63,7 +63,7 @@ internal static class DatFileParser
 {
     private const uint MaximumSpriteReferencesPerThing = 1_000_000;
 
-    public static DatFileModel Parse(string path, int? versionFallback = null)
+    public static DatFileModel Parse(string path, int? versionFallback = null, bool? extendedOverride = null, bool? improvedAnimationsOverride = null, bool? frameGroupsOverride = null)
     {
         var data = File.ReadAllBytes(path);
         if (data.Length < 12) throw new InvalidDataException("The DAT file is too small to contain a valid header.");
@@ -81,9 +81,10 @@ internal static class DatFileParser
         var effectCount = ReadUInt16(reader);
         var missileCount = ReadUInt16(reader);
         var readerVersion = versionValue <= 730 ? 1 : versionValue <= 750 ? 2 : versionValue <= 772 ? 3 : versionValue <= 854 ? 4 : versionValue <= 986 ? 5 : 6;
-        var extended = versionValue >= 960;
-        var improvedAnimations = versionValue >= 1050;
-        var frameGroups = versionValue >= 1057;
+        var defaults = ReadFormatOptions(path, versionValue);
+        var extended = extendedOverride ?? defaults.Extended;
+        var improvedAnimations = improvedAnimationsOverride ?? defaults.ImprovedAnimations;
+        var frameGroups = frameGroupsOverride ?? defaults.FrameGroups;
         var things = new List<DatThing>(Math.Min(100_000, itemCount + outfitCount + effectCount + missileCount));
 
         ReadThings(reader, things, 100, itemCount, "item", readerVersion, extended, improvedAnimations, frameGroups);
@@ -93,7 +94,36 @@ internal static class DatFileParser
         if (stream.Position != stream.Length)
             throw new InvalidDataException($"The DAT parser stopped at byte {stream.Position:N0} of {stream.Length:N0}. The selected client version may not match this file.");
 
-        return new DatFileModel(signature, versionName, versionValue, itemCount, outfitCount, effectCount, missileCount, things);
+        return new DatFileModel(signature, versionName, versionValue, itemCount, outfitCount, effectCount, missileCount, things, extended, improvedAnimations, frameGroups);
+    }
+
+    private static (bool Extended, bool ImprovedAnimations, bool FrameGroups) ReadFormatOptions(string datPath, int versionValue)
+    {
+        var defaults = (Extended: versionValue >= 960, ImprovedAnimations: versionValue >= 1050, FrameGroups: versionValue >= 1057);
+        var otfiPath = Path.ChangeExtension(datPath, ".otfi");
+        if (!File.Exists(otfiPath)) return defaults;
+
+        var options = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["extended"] = defaults.Extended,
+            ["frame-durations"] = defaults.ImprovedAnimations,
+            ["frame-groups"] = defaults.FrameGroups
+        };
+        foreach (var line in File.ReadLines(otfiPath))
+        {
+            var trimmed = line.Trim();
+            if (trimmed.Length == 0 || trimmed.StartsWith('#')) continue;
+            var separator = trimmed.IndexOf(':');
+            if (separator <= 0) continue;
+            var key = trimmed[..separator].Trim();
+            if (!options.ContainsKey(key)) continue;
+            var value = trimmed[(separator + 1)..].Split('#', 2)[0].Trim();
+            if (!bool.TryParse(value, out var enabled))
+                throw new InvalidDataException($"Invalid OTFI value for '{key}' in {Path.GetFileName(otfiPath)}.");
+            options[key] = enabled;
+        }
+
+        return (options["extended"], options["frame-durations"], options["frame-groups"]);
     }
 
     private static void ReadThings(BinaryReader reader, List<DatThing> things, uint firstId, uint lastId, string category,

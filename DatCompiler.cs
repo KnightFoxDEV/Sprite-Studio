@@ -76,7 +76,10 @@ internal static class DatCompiler
             Signature = options.TargetVersion.DatSignature,
             VersionName = options.TargetVersion.Name,
             VersionValue = options.TargetVersion.Value,
-            Things = convertedThings
+            Things = convertedThings,
+            Extended = options.Extended,
+            ImprovedAnimations = options.ImprovedAnimations,
+            FrameGroups = options.FrameGroups
         };
         return new DatCompileResult(model, sourceSpriteIds);
     }

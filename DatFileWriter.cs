@@ -18,9 +18,9 @@ internal static class DatFileWriter
         writer.Write(model.EffectCount);
         writer.Write(model.MissileCount);
 
-        var extended = extendedOverride ?? model.VersionValue >= 960;
-        var improvedAnimations = improvedAnimationsOverride ?? model.VersionValue >= 1050;
-        var hasFrameGroups = frameGroupsOverride ?? model.VersionValue >= 1057;
+        var extended = extendedOverride ?? model.Extended;
+        var improvedAnimations = improvedAnimationsOverride ?? model.ImprovedAnimations;
+        var hasFrameGroups = frameGroupsOverride ?? model.FrameGroups;
         foreach (var thing in model.Things)
         {
             if (thing.RawProperties.Length == 0 || thing.RawProperties[^1] != 0xFF)

@@ -2,7 +2,6 @@
 bin/
 obj/
 publish/
-executar aqui/
 .dotnet-cli/
 
 # User-specific IDE files

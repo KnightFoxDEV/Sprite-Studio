@@ -4001,7 +4001,7 @@ public partial class MainWindow : Window
                 var temporaryPath = CreateTemporaryPath(targetPath);
                 temporaryFiles.Add((temporaryPath, targetPath));
                 await File.WriteAllBytesAsync(temporaryPath, DatFileWriter.Serialize(modelToSave));
-                verifiedModel = await Task.Run(() => DatFileParser.Parse(temporaryPath, modelToSave.VersionValue));
+                verifiedModel = await Task.Run(() => DatFileParser.Parse(temporaryPath, modelToSave.VersionValue, modelToSave.Extended, modelToSave.ImprovedAnimations, modelToSave.FrameGroups));
             }
 
             if (_serverItemFiles is not null)
