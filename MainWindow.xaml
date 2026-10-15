@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         Title="Editor Universe" Icon="Assets/SpriteStudio.png" Width="1500" Height="820" MinWidth="1240" MinHeight="680" WindowStartupLocation="CenterScreen"
-        WindowStyle="None" ResizeMode="CanResize" StateChanged="MainWindow_StateChanged"
+        WindowStyle="None" ResizeMode="CanResize" StateChanged="MainWindow_StateChanged" SizeChanged="MainWindow_SizeChanged"
         Background="{DynamicResource AppBackground}" Foreground="{DynamicResource TextBrush}"
         FontFamily="Segoe UI" AllowDrop="True" Drop="Window_Drop" DragOver="Window_DragOver" PreviewKeyDown="MainWindow_PreviewKeyDown">
     <shell:WindowChrome.WindowChrome>
@@ -87,7 +87,7 @@
                         <TextBlock x:Name="BrandSubtitle" Text="Editor de sprites para Tibia" FontSize="9" Foreground="{DynamicResource MutedBrush}" />
                     </StackPanel>
                 </StackPanel>
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0">
+                <StackPanel x:Name="TopContextPanel" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0">
                     <TextBlock x:Name="TopWorkspace" Text="EDITOR UNIVERSE" Foreground="{DynamicResource MutedBrush}" FontSize="9" VerticalAlignment="Center" />
                     <TextBlock Text="   /   " Foreground="{DynamicResource DetailLabelBrush}" VerticalAlignment="Center" />
                     <TextBlock x:Name="TopLibrary" Text="Biblioteca de sprites" FontSize="10" FontWeight="SemiBold" VerticalAlignment="Center" />
@@ -95,7 +95,7 @@
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
                     <Button x:Name="SaveAllButton" Content="Salvar tudo" Click="SaveAllButton_Click" Padding="10,6" FontSize="10" Margin="0,0,6,0" IsEnabled="False" />
                     <Button x:Name="CompileAsButton" Content="Compilar como…" Click="CompileAsButton_Click" Padding="10,6" FontSize="10" Margin="0,0,6,0" IsEnabled="False" />
-                    <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Background="{DynamicResource PanelBackground}" CornerRadius="12" Padding="9,5" Margin="0,0,10,0">
+                    <Border x:Name="StatusBadge" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Background="{DynamicResource PanelBackground}" CornerRadius="12" Padding="9,5" Margin="0,0,10,0">
                         <StackPanel Orientation="Horizontal">
                             <Ellipse x:Name="StatusDot" Width="6" Height="6" Fill="{DynamicResource SubtleTextBrush}" VerticalAlignment="Center" Margin="0,0,7,0" />
                             <TextBlock x:Name="StatusText" Text="Aguardando arquivo" Foreground="{DynamicResource MutedBrush}" FontSize="9" VerticalAlignment="Center" />
@@ -109,9 +109,9 @@
                     </Border>
                     <Button x:Name="SlicerButton" Content="Slicer" Click="SlicerButton_Click" Padding="10,6" FontSize="10" Margin="0,0,6,0" />
                     <Button x:Name="ImportFolderButton" Content="Importar pasta…" Click="ImportFolderButton_Click" Padding="10,6" FontSize="10" Margin="0,0,6,0" />
-                    <Button x:Name="OpenDatButton" Content="Abrir DAT" Click="OpenDatButton_Click" Padding="10,6" FontSize="10" Margin="0,0,6,0" />
                     <Button x:Name="OpenServerItemsButton" Content="Abrir OTB/XML" Click="OpenServerItemsButton_Click" Padding="10,6" FontSize="10" Margin="0,0,6,0" />
-                    <Button x:Name="OpenButton" Content="Abrir SPR" Click="OpenButton_Click" Padding="10,6" FontSize="10" Margin="0,0,6,0" />
+                    <Button x:Name="OpenSecondWindowButton" Content="Nova janela" Click="OpenSecondWindowButton_Click" Padding="10,6" FontSize="10" Margin="0,0,6,0" ToolTip="Abrir outra janela para trabalhar com um segundo cliente" />
+                    <Button x:Name="ArrangeWindowsButton" Content="Lado a lado" Click="ArrangeWindowsSideBySideButton_Click" Padding="9,6" FontSize="10" Margin="0,0,6,0" ToolTip="Organizar esta janela e a outra lado a lado" IsEnabled="False" />
                     <Button x:Name="PrimaryOpenButton" Content="＋  Abrir pasta do cliente" Style="{StaticResource PrimaryButton}" Padding="11,6" FontSize="10" Click="OpenFolderButton_Click" />
                 </StackPanel>
             </Grid>
@@ -310,6 +310,7 @@
                         <Button x:Name="DatDuplicateButton" Content="⧉" Width="37" Height="29" Padding="0" Margin="1,0" FontSize="13" Click="DatDuplicateButton_Click" />
                         <Button x:Name="DatImportButton" Content="⇧" Width="37" Height="29" Padding="0" Margin="1,0" FontSize="13" Click="DatImportButton_Click" />
                         <Button x:Name="DatExportButton" Content="⇩" Width="37" Height="29" Padding="0" Margin="1,0" FontSize="13" Click="DatExportButton_Click" />
+                        <Button x:Name="DatTransferButton" Content="⇄" Width="37" Height="29" Padding="0" Margin="1,0" FontSize="13" Click="DatTransferButton_Click" />
                         <Button x:Name="DatDeleteButton" Content="⌫" Width="37" Height="29" Padding="0" Margin="1,0" FontSize="13" Click="DatDeleteButton_Click" />
                     </StackPanel>
                     <StackPanel x:Name="PagerPanel" Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,8,0,0" Visibility="Collapsed">

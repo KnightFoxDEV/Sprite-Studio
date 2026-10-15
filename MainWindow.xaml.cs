@@ -94,6 +94,7 @@ public partial class MainWindow : Window
         ["575A84BD"] = "10.95", ["57BBD603"] = "10.98", ["57FF106B"] = "10.99", ["59E48E02"] = "13.10"
     };
 
+    private static readonly List<MainWindow> OpenEditorWindows = [];
     private readonly Dictionary<uint, BitmapSource> _pageBitmaps = new();
     private readonly Dictionary<uint, BitmapSource> _objectSpriteBitmaps = new();
     private readonly Dictionary<uint, BitmapSource> _selectedThingSpriteBitmaps = new();
@@ -242,7 +243,14 @@ public partial class MainWindow : Window
         _infoPreviewTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
         _infoPreviewTimer.Tick += InfoPreviewTimer_Tick;
         Closing += (_, e) => { if (!ConfirmDiscardUnsavedMetadata()) e.Cancel = true; };
-        Closed += (_, _) => { _animationTimer.Stop(); _infoPreviewTimer.Stop(); };
+        Closed += (_, _) =>
+        {
+            OpenEditorWindows.Remove(this);
+            foreach (var openWindow in OpenEditorWindows)
+                openWindow.UpdateArrangeWindowsButtonState();
+            _animationTimer.Stop();
+            _infoPreviewTimer.Stop();
+        };
         _initialized = true;
         UpdateWindowCaptionButtons();
         ApplyLanguage();
@@ -250,6 +258,9 @@ public partial class MainWindow : Window
         UpdateViewButtons();
         RenderPage();
         UpdateEmptyState();
+        OpenEditorWindows.Add(this);
+        foreach (var openWindow in OpenEditorWindows)
+            openWindow.UpdateArrangeWindowsButtonState();
     }
 
     private bool IsEnglish => (LanguageCombo.SelectedItem as ComboBoxItem)?.Tag?.ToString() == "en";
@@ -307,6 +318,34 @@ public partial class MainWindow : Window
 
     private void MainWindow_StateChanged(object? sender, EventArgs e) => UpdateWindowCaptionButtons();
 
+    private void MainWindow_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (!_initialized) return;
+        ApplyCompactToolbarLayout();
+    }
+
+    private void ApplyCompactToolbarLayout()
+    {
+        if (TopContextPanel is null) return;
+        var compact = Width < 1280;
+        var utilityVisibility = compact ? Visibility.Collapsed : Visibility.Visible;
+        TopContextPanel.Visibility = utilityVisibility;
+        CompileAsButton.Visibility = utilityVisibility;
+        StatusBadge.Visibility = utilityVisibility;
+        OtbStatusBadge.Visibility = utilityVisibility;
+        SlicerButton.Visibility = utilityVisibility;
+        ImportFolderButton.Visibility = utilityVisibility;
+        OpenServerItemsButton.Visibility = utilityVisibility;
+        PrimaryOpenButton.Visibility = utilityVisibility;
+        ObjectSpriteColumn.Width = !compact && IsObjectMode && _datModel is not null
+            ? new GridLength(270) : new GridLength(0);
+    }
+
+    private void UpdateArrangeWindowsButtonState()
+    {
+        if (ArrangeWindowsButton is null) return;
+        ArrangeWindowsButton.IsEnabled = OpenEditorWindows.Any(window => window != this && window.IsLoaded);
+    }
     private void UpdateWindowCaptionButtons()
     {
         if (MaximizeWindowButton is null) return;
@@ -335,14 +374,16 @@ public partial class MainWindow : Window
                 _ => item.Content
             };
         PrivacyLabel.Text = Text("Seus arquivos ficam no seu computador.", "Your files stay on your computer.");
-        OpenDatButton.Content = Text("Abrir DAT", "Open DAT");
         OpenServerItemsButton.Content = Text("Abrir OTB/XML", "Open OTB/XML");
-        OpenButton.Content = Text("Abrir SPR", "Open SPR");
         CompileAsButton.Content = Text("Compilar como…", "Compile As…");
         CompileAsButton.ToolTip = Text("Compilar DAT e SPR em outra versão (Ctrl+Shift+S)", "Compile DAT and SPR for another version (Ctrl+Shift+S)");
         SlicerButton.Content = "Slicer";
         ImportFolderButton.Content = Text("Importar pasta…", "Import Folder…");
         ImportFolderButton.ToolTip = Text("Importar todos os objetos OBD de uma pasta para o DAT/SPR e items.otb abertos", "Import every OBD object in a folder into the open DAT/SPR and items.otb");
+        OpenSecondWindowButton.Content = Text("Nova janela", "New window");
+        OpenSecondWindowButton.ToolTip = Text("Abrir outra janela para trabalhar com um segundo cliente", "Open another window to work with a second client");
+        ArrangeWindowsButton.Content = Text("Lado a lado", "Side by side");
+        ArrangeWindowsButton.ToolTip = Text("Organizar esta janela e a outra lado a lado", "Arrange this window and the other one side by side");
         PrimaryOpenButton.Content = Text("＋  Abrir pasta do cliente", "＋  Open client folder");
         InfoTitle.Text = Text("Informações", "Info");
         ClientVersionLabel.Text = Text("Versão:", "Version:");
@@ -389,6 +430,7 @@ public partial class MainWindow : Window
         DatDuplicateButton.ToolTip = Text("Duplicar o objeto DAT selecionado", "Duplicate the selected DAT object");
         DatImportButton.ToolTip = Text("Importar um objeto exportado pelo Studio como novo objeto", "Import a Studio object export as a new object");
         DatExportButton.ToolTip = Text("Exportar a seleção ou escolher uma categoria e faixa completa", "Export the selection or choose a full category and range");
+        DatTransferButton.ToolTip = Text("Enviar os objetos selecionados para outra janela do editor", "Send selected objects to another editor window");
         DatDeleteButton.ToolTip = Text("Excluir o objeto selecionado; objetos no meio da lista serão limpos para preservar os IDs seguintes", "Delete the selected object; objects between IDs are cleared to preserve later IDs");
         FindButton.Content = Text("Buscar", "Find");
         SearchBox.ToolTip = Text("Digite o ID e pressione Enter para ir até ele", "Enter an ID and press Enter to jump to it");
@@ -3325,6 +3367,231 @@ public partial class MainWindow : Window
         });
     }
 
+    private void OpenSecondWindowButton_Click(object sender, RoutedEventArgs e)
+    {
+        var window = new MainWindow();
+        window.Show();
+        window.Activate();
+    }
+
+    private void ArrangeWindowsSideBySideButton_Click(object sender, RoutedEventArgs e)
+    {
+        var otherWindow = OpenEditorWindows.LastOrDefault(window => window != this && window.IsLoaded);
+        if (otherWindow is null) return;
+
+        if (!IsVisible) Show();
+        if (!otherWindow.IsVisible) otherWindow.Show();
+        WindowState = WindowState.Normal;
+        otherWindow.WindowState = WindowState.Normal;
+
+        var handle = new WindowInteropHelper(this).Handle;
+        var monitor = MonitorFromWindow(handle, MonitorDefaultToNearest);
+        if (monitor == IntPtr.Zero) return;
+
+        var monitorInfo = new NativeMonitorInfo { Size = Marshal.SizeOf<NativeMonitorInfo>() };
+        if (!GetMonitorInfo(monitor, ref monitorInfo)) return;
+
+        var dpi = VisualTreeHelper.GetDpi(this);
+        var scaleX = Math.Max(dpi.DpiScaleX, 0.1);
+        var scaleY = Math.Max(dpi.DpiScaleY, 0.1);
+        var workLeft = monitorInfo.Work.Left / scaleX;
+        var workTop = monitorInfo.Work.Top / scaleY;
+        var workWidth = (monitorInfo.Work.Right - monitorInfo.Work.Left) / scaleX;
+        var workHeight = (monitorInfo.Work.Bottom - monitorInfo.Work.Top) / scaleY;
+        var leftWidth = Math.Floor(workWidth / 2);
+        var rightWidth = workWidth - leftWidth;
+
+        SetSideBySideWindowBounds(this, workLeft, workTop, leftWidth, workHeight);
+        SetSideBySideWindowBounds(otherWindow, workLeft + leftWidth, workTop, rightWidth, workHeight);
+        otherWindow.Activate();
+        Activate();
+    }
+
+    private static void SetSideBySideWindowBounds(MainWindow window, double left, double top, double width, double height)
+    {
+        window.MinWidth = Math.Min(680, width);
+        window.MinHeight = Math.Min(500, height);
+        window.WindowState = WindowState.Normal;
+        window.Left = left;
+        window.Top = top;
+        window.Width = width;
+        window.Height = height;
+    }
+    private async void DatTransferButton_Click(object sender, RoutedEventArgs e)
+    {
+        var sourceModel = _datModel;
+        var sourceSpr = _sprStream;
+        var sourceOffsets = (uint[])_offsets.Clone();
+        if (sourceModel is null || sourceSpr is null || _datPath is null || _filePath is null || _sprEditInProgress)
+            return;
+
+        var things = GetSelectedDatThings();
+        if (things.Count == 0)
+        {
+            MessageBox.Show(this, Text("Selecione um ou mais objetos na lista antes de transferir.",
+                "Select one or more objects in the list before transferring."),
+                Text("Nenhum objeto selecionado", "No objects selected"),
+                MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var targets = OpenEditorWindows
+            .Where(window => window != this && window._datModel is not null && window._sprStream is not null
+                && window._datPath is not null && window._filePath is not null && !window._sprEditInProgress && window.IsEnabled)
+            .Select(window => new DatTransferTargetOption(window,
+                $"{Path.GetFileName(window._datPath)}  —  {window._datModel!.VersionName}"))
+            .ToArray();
+        if (targets.Length == 0)
+        {
+            MessageBox.Show(this, Text("Abra uma nova janela pelo botão no topo e carregue nela o cliente de destino antes de transferir.",
+                "Open a new window with the button at the top and load the destination client before transferring."),
+                Text("Janela de destino não encontrada", "No destination window found"),
+                MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        MainWindow? destination;
+        if (targets.Length == 1)
+        {
+            destination = targets[0].Window;
+        }
+        else
+        {
+            var targetPicker = new DatTransferTargetDialog(targets, IsEnglish) { Owner = this };
+            if (targetPicker.ShowDialog() != true) return;
+            destination = targetPicker.SelectedTarget;
+        }
+        if (destination is null || !OpenEditorWindows.Contains(destination)) return;
+        if (destination._datModel is null || destination._sprStream is null || destination._sprEditInProgress || !destination.IsEnabled)
+        {
+            MessageBox.Show(this, Text("A janela de destino precisa estar com DAT e SPR abertos e sem edição em andamento.",
+                "The destination window must have DAT and SPR open with no edit in progress."),
+                Text("Destino indisponível", "Destination unavailable"),
+                MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var spriteCount = things.Sum(thing =>
+        {
+            var groups = thing.Category == "outfit" ? thing.FrameGroups : thing.FrameGroups.Take(1).ToArray();
+            return (long)groups.SelectMany(group => group.Frames).SelectMany(frame => frame.SpriteIds)
+                .Where(id => id != 0).Distinct().Count();
+        });
+        var prompt = Text(
+            $"Transferir {things.Count:N0} objeto(s) e até {spriteCount:N0} sprites vinculados para {Path.GetFileName(destination._datPath)}? Os objetos receberão novos IDs no final da categoria. Salve tudo na janela de destino para gravar as alterações.",
+            $"Transfer {things.Count:N0} object(s) and up to {spriteCount:N0} linked sprites to {Path.GetFileName(destination._datPath)}? Objects will receive new IDs at the end of the category. Save all in the destination window to write the changes.");
+        if (!ConfirmWithTheme(Text("Confirmar transferência", "Confirm transfer"), prompt, defaultNo: true))
+            return;
+
+        if (!OpenEditorWindows.Contains(destination) || destination._datModel is null || destination._sprStream is null
+            || destination._sprEditInProgress)
+        {
+            MessageBox.Show(this, Text("A janela de destino foi fechada ou descarregada.", "The destination window was closed or its client was unloaded."),
+                Text("Transferência cancelada", "Transfer cancelled"), MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var destinationModel = destination._datModel;
+        var tempFolder = Path.Combine(Path.GetTempPath(), $"EditorUniverseTransfer-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempFolder);
+        destination.IsEnabled = false;
+        IsEnabled = false;
+        try
+        {
+            var obdPaths = new List<string>(things.Count);
+            for (var index = 0; index < things.Count; index++)
+            {
+                var thing = things[index];
+                StatusText.Text = Text($"Preparando objeto {index + 1:N0}/{things.Count:N0}…",
+                    $"Preparing object {index + 1:N0}/{things.Count:N0}…");
+                var groups = thing.Category == "outfit" ? thing.FrameGroups : thing.FrameGroups.Take(1).ToArray();
+                var spriteIds = groups.SelectMany(group => group.Frames).SelectMany(frame => frame.SpriteIds)
+                    .Distinct().ToArray();
+                var pixels = await ReadSourceObdSpritePixelsAsync(spriteIds, sourceOffsets, sourceSpr.SafeFileHandle);
+                var obdBytes = await Task.Run(() => ObdFileWriter.Serialize(
+                    thing, sourceModel.VersionValue, destinationModel.VersionValue, 3, pixels));
+                var path = Path.Combine(tempFolder, $"{index:D8}-{thing.Category}-{thing.Id}.obd");
+                await File.WriteAllBytesAsync(path, obdBytes);
+                obdPaths.Add(path);
+            }
+
+            await destination.ImportObdFolderAsync(obdPaths);
+            destination.IsEnabled = true;
+            if (destination.WindowState == WindowState.Minimized) destination.WindowState = WindowState.Normal;
+            destination.Activate();
+            StatusText.Text = Text($"Transferidos {things.Count:N0} objeto(s).",
+                $"Transferred {things.Count:N0} object(s).");
+        }
+        catch (Exception ex)
+        {
+            SetError(ex.Message);
+            MessageBox.Show(this, ex.Message, Text("Falha na transferência", "Transfer failed"),
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+        finally
+        {
+            try
+            {
+                if (Directory.Exists(tempFolder)) Directory.Delete(tempFolder, recursive: true);
+            }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
+            destination.IsEnabled = true;
+            IsEnabled = true;
+        }
+    }
+    private static async Task<IReadOnlyDictionary<uint, byte[]>> ReadSourceObdSpritePixelsAsync(
+        IEnumerable<uint> spriteIds, uint[] offsets, Microsoft.Win32.SafeHandles.SafeFileHandle handle)
+    {
+        var results = new Dictionary<uint, byte[]>();
+        var fileLength = RandomAccess.GetLength(handle);
+        foreach (var id in spriteIds)
+        {
+            if (id == 0)
+            {
+                results[id] = new byte[SpritePixelCount * 4];
+                continue;
+            }
+            if (id > offsets.Length)
+                throw new InvalidDataException($"O DAT de origem referencia o sprite {id}, que não existe no SPR escolhido.");
+
+            var offset = offsets[id - 1];
+            if (offset == 0)
+            {
+                results[id] = new byte[SpritePixelCount * 4];
+                continue;
+            }
+            if (offset + 5L > fileLength)
+                throw new InvalidDataException($"O sprite {id} aponta para fora do arquivo SPR de origem.");
+
+            var header = new byte[5];
+            await ReadExactlyAsync(handle, header, offset);
+            var compressedLength = BinaryPrimitives.ReadUInt16LittleEndian(header.AsSpan(3));
+            if (compressedLength == 0)
+            {
+                results[id] = new byte[SpritePixelCount * 4];
+                continue;
+            }
+            if (offset + 5L + compressedLength > fileLength)
+                throw new InvalidDataException($"Os pixels do sprite {id} estão incompletos no SPR de origem.");
+
+            var compressed = new byte[compressedLength];
+            await ReadExactlyAsync(handle, compressed, offset + 5L);
+            var bgra = DecodePixels(compressed)
+                ?? throw new InvalidDataException($"Não foi possível decodificar o sprite {id} do SPR de origem.");
+            var argb = new byte[bgra.Length];
+            for (var pixel = 0; pixel < bgra.Length; pixel += 4)
+            {
+                argb[pixel] = bgra[pixel + 3];
+                argb[pixel + 1] = bgra[pixel + 2];
+                argb[pixel + 2] = bgra[pixel + 1];
+                argb[pixel + 3] = bgra[pixel];
+            }
+            results[id] = argb;
+        }
+        return results;
+    }
+
     private async Task<DatThing> ImportObdThingAsync(string path, string expectedCategory)
     {
         var model = _datModel ?? throw new InvalidOperationException(Text("Abra um arquivo DAT primeiro.", "Open a DAT file first."));
@@ -4307,7 +4574,7 @@ public partial class MainWindow : Window
         ShowGridCheckBox.Visibility = IsObjectMode ? Visibility.Visible : Visibility.Collapsed;
         BulkAnimationSpeedButton.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
         ObjectSpritePanel.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
-        ObjectSpriteColumn.Width = visible ? new GridLength(270) : new GridLength(0);
+        ObjectSpriteColumn.Width = visible && Width >= 1280 ? new GridLength(270) : new GridLength(0);
         UpdateViewButtons();
         if (visible) RenderObjectSpritePage();
         UpdatePixelEditorControls();
@@ -5520,7 +5787,6 @@ public partial class MainWindow : Window
         SetError(null);
         StatusText.Text = Text("Lendo o arquivo DAT…", "Reading DAT file…");
         StatusDot.Fill = ThemeBrush("WarningBrush");
-        OpenDatButton.IsEnabled = false;
         try
         {
             var fallbackVersion = _filePath is null ? null : ClientVersionCatalog.FindBySprSignature(_signature)?.Value;
@@ -5578,7 +5844,6 @@ public partial class MainWindow : Window
         }
         finally
         {
-            OpenDatButton.IsEnabled = true;
         }
     }
 
@@ -6520,6 +6785,7 @@ public partial class MainWindow : Window
         DatNewButton.IsEnabled = DatImportButton.IsEnabled = datMode;
         DatReplaceButton.IsEnabled = DatDuplicateButton.IsEnabled = DatDeleteButton.IsEnabled = hasSelectedThing;
         DatExportButton.IsEnabled = datMode;
+        DatTransferButton.IsEnabled = datMode && _sprStream is not null && _filePath is not null && !_sprEditInProgress;
         UpdateSpriteActionToolbar();
     }
 

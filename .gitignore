@@ -7,3 +7,6 @@ publish/
 # User-specific IDE files
 *.user
 *.suo
+# Local client data and runnable app folders
+/860/
+/executar*/
