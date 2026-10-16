@@ -2035,13 +2035,16 @@ public partial class MainWindow : Window
         var animatedThings = _datModel?.Things
             .Where(thing => thing.Category == category && thing.FrameGroups.Any(group => group.Frames.Count > 1))
             .ToArray() ?? [];
-        var supportsDurations = _datModel is { VersionValue: >= 1050 };
+        var supportsDurations = _datModel?.ImprovedAnimations == true;
         BulkAnimationSpeedButton.IsEnabled = _datPath is not null && supportsDurations && animatedThings.Length > 0;
-        BulkAnimationSpeedButton.ToolTip = supportsDurations
-            ? Text($"Aplicar a {animatedThings.Length:N0} objetos animados desta categoria",
-                $"Apply to {animatedThings.Length:N0} animated objects in this category")
-            : Text("Durações por quadro são suportadas a partir do Tibia 10.50.",
-                "Per-frame durations are supported starting with Tibia 10.50.");
+        BulkAnimationSpeedButton.ToolTip = !supportsDurations
+            ? Text("Ative Animações melhoradas para editar as durações por quadro.",
+                "Enable Improved Animations to edit per-frame durations.")
+            : animatedThings.Length > 0
+                ? Text($"Aplicar a {animatedThings.Length:N0} objetos animados desta categoria",
+                    $"Apply to {animatedThings.Length:N0} animated objects in this category")
+                : Text("A categoria atual não tem objetos com vários quadros.",
+                    "The current category has no multi-frame objects.");
     }
 
     private void BuildItemPropertyControls()
@@ -2861,7 +2864,7 @@ public partial class MainWindow : Window
 
     private void BulkAnimationSpeedButton_Click(object sender, RoutedEventArgs e)
     {
-        if (_datModel is null || _datPath is null || _datModel.VersionValue < 1050) return;
+        if (_datModel is null || _datPath is null || !_datModel.ImprovedAnimations) return;
         var category = SelectedDatCategory;
         var animatedThings = _datModel.Things
             .Where(thing => thing.Category == category && thing.FrameGroups.Any(group => group.Frames.Count > 1))
@@ -4974,16 +4977,18 @@ public partial class MainWindow : Window
             var inputFolder = Path.GetDirectoryName(datSourcePath) ?? Environment.CurrentDirectory;
             var outputFolder = Path.Combine(inputFolder, "Compiled");
             var dialog = new CompileAssetDialog(Path.GetFileNameWithoutExtension(datSourcePath), outputFolder,
-                outputFolder, sourceModel.VersionValue, sourcePixelStride == 4,
+                outputFolder, sourceModel.VersionValue, sourceModel.Extended, sourcePixelStride == 4,
+                sourceModel.ImprovedAnimations, sourceModel.FrameGroups,
                 serverFiles is not null, serverFiles?.HasXml == true) { Owner = this };
             if (dialog.ShowDialog() != true || dialog.Options is not { } options) return;
 
             var datTargetPath = Path.Combine(options.OutputFolder, options.Name + ".dat");
             var sprTargetPath = Path.Combine(options.OutputFolder, options.Name + ".spr");
+            var otfiTargetPath = Path.Combine(options.OutputFolder, options.Name + ".otfi");
             var serverTargetPath = options.ExportServerItems
                 ? Path.Combine(options.ServerItemsFolder, options.ServerItemsFormat == "xml" ? "items.xml" : "items.otb")
                 : null;
-            var targetPaths = new[] { datTargetPath, sprTargetPath, serverTargetPath }
+            var targetPaths = new[] { datTargetPath, sprTargetPath, otfiTargetPath, serverTargetPath }
                 .Where(path => path is not null).Select(path => Path.GetFullPath(path!)).ToArray();
             if (targetPaths.Distinct(StringComparer.OrdinalIgnoreCase).Count() != targetPaths.Length)
                 throw new InvalidDataException("The output DAT, SPR, and server file paths must be different.");
@@ -5005,7 +5010,8 @@ public partial class MainWindow : Window
                 : null;
             var datTemporaryPath = CreateCompileTemporaryPath(datTargetPath);
             var sprTemporaryPath = CreateCompileTemporaryPath(sprTargetPath);
-            var temporaryPaths = new List<string> { datTemporaryPath, sprTemporaryPath };
+            var otfiTemporaryPath = CreateCompileTemporaryPath(otfiTargetPath);
+            var temporaryPaths = new List<string> { datTemporaryPath, sprTemporaryPath, otfiTemporaryPath };
             string? serverTemporaryPath = serverTargetPath is null ? null : CreateCompileTemporaryPath(serverTargetPath);
             if (serverTemporaryPath is not null) temporaryPaths.Add(serverTemporaryPath);
             CompileAsButton.IsEnabled = false;
@@ -5028,14 +5034,22 @@ public partial class MainWindow : Window
                 if (serverTemporaryPath is not null && serverBytes is not null)
                     await File.WriteAllBytesAsync(serverTemporaryPath, serverBytes);
 
-                var usesStandardDatLayout = options.Extended == (options.TargetVersion.Value >= 960)
-                    && options.ImprovedAnimations == (options.TargetVersion.Value >= 1050)
-                    && options.FrameGroups == (options.TargetVersion.Value >= 1057);
-                if (usesStandardDatLayout)
-                    _ = await Task.Run(() => DatFileParser.Parse(datTemporaryPath, options.TargetVersion.Value));
+                var otfiContent = string.Join(Environment.NewLine,
+                    "DatSpr",
+                    $"  extended: {options.Extended.ToString().ToLowerInvariant()}",
+                    $"  transparency: {options.Transparency.ToString().ToLowerInvariant()}",
+                    $"  frame-durations: {options.ImprovedAnimations.ToString().ToLowerInvariant()}",
+                    $"  frame-groups: {options.FrameGroups.ToString().ToLowerInvariant()}",
+                    "  metadata-controller: default",
+                    "  attribute-server: tfs1.4") + Environment.NewLine;
+                await File.WriteAllTextAsync(otfiTemporaryPath, otfiContent);
+
+                _ = await Task.Run(() => DatFileParser.Parse(datTemporaryPath, options.TargetVersion.Value,
+                    options.Extended, options.ImprovedAnimations, options.FrameGroups));
 
                 File.Move(datTemporaryPath, datTargetPath, overwrite: true);
                 File.Move(sprTemporaryPath, sprTargetPath, overwrite: true);
+                File.Move(otfiTemporaryPath, otfiTargetPath, overwrite: true);
                 if (serverTemporaryPath is not null && serverTargetPath is not null)
                     File.Move(serverTemporaryPath, serverTargetPath, overwrite: true);
 

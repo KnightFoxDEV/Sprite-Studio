@@ -56,11 +56,11 @@
                     <Grid>
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
                         <StackPanel>
-                            <CheckBox x:Name="ExtendedCheckBox" Content="Extended" IsEnabled="False" Foreground="{DynamicResource TextBrush}" Margin="0,3" />
+                            <CheckBox x:Name="ExtendedCheckBox" Content="Extended" Foreground="{DynamicResource TextBrush}" Margin="0,3" />
                             <CheckBox x:Name="TransparencyCheckBox" Content="Transparência" Foreground="{DynamicResource TextBrush}" Margin="0,3" />
                         </StackPanel>
                         <StackPanel Grid.Column="1">
-                            <CheckBox x:Name="ImprovedAnimationsCheckBox" Content="Animações melhoradas" IsEnabled="False" Foreground="{DynamicResource TextBrush}" Margin="0,3" />
+                            <CheckBox x:Name="ImprovedAnimationsCheckBox" Content="Animações melhoradas" Foreground="{DynamicResource TextBrush}" Margin="0,3" />
                             <CheckBox x:Name="FrameGroupsCheckBox" Content="Frame Groups" Foreground="{DynamicResource TextBrush}" Margin="0,3" />
                         </StackPanel>
                     </Grid>

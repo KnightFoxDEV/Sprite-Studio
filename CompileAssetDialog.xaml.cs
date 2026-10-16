@@ -26,7 +26,8 @@ public partial class CompileAssetDialog : Window
     internal CompileAssetOptions? Options { get; private set; }
 
     public CompileAssetDialog(string name, string outputFolder, string serverItemsFolder,
-        int currentVersion, bool transparency, bool hasServerItems, bool hasXml)
+        int currentVersion, bool extended, bool transparency, bool improvedAnimations, bool frameGroups,
+        bool hasServerItems, bool hasXml)
     {
         InitializeComponent();
         NameInput.Text = name;
@@ -45,7 +46,10 @@ public partial class CompileAssetDialog : Window
         ServerFileTypeCombo.Items.Add(new ComboBoxItem { Content = "items.otb", Tag = "otb" });
         if (hasXml) ServerFileTypeCombo.Items.Add(new ComboBoxItem { Content = "items.xml", Tag = "xml" });
         ServerFileTypeCombo.SelectedIndex = 0;
+        ExtendedCheckBox.IsChecked = extended;
         TransparencyCheckBox.IsChecked = transparency;
+        ImprovedAnimationsCheckBox.IsChecked = improvedAnimations;
+        FrameGroupsCheckBox.IsChecked = frameGroups;
         _initializing = false;
         ApplyVersionDefaults();
     }
@@ -58,10 +62,17 @@ public partial class CompileAssetDialog : Window
     private void ApplyVersionDefaults()
     {
         if (VersionCombo.SelectedItem is not DatTargetVersion version) return;
-        ExtendedCheckBox.IsChecked = version.Value >= 960;
-        ImprovedAnimationsCheckBox.IsChecked = version.Value >= 1050;
-        FrameGroupsCheckBox.IsEnabled = version.Value >= 1057;
-        FrameGroupsCheckBox.IsChecked = version.Value >= 1057;
+        var requiresExtended = version.Value >= 960;
+        ExtendedCheckBox.IsEnabled = !requiresExtended;
+        ExtendedCheckBox.IsChecked = ExtendedCheckBox.IsChecked == true || requiresExtended;
+
+        var requiresImprovedAnimations = version.Value >= 1050;
+        ImprovedAnimationsCheckBox.IsEnabled = !requiresImprovedAnimations;
+        ImprovedAnimationsCheckBox.IsChecked = ImprovedAnimationsCheckBox.IsChecked == true || requiresImprovedAnimations;
+
+        // Frame Groups can be selected for older target versions as well; newer versions default to it.
+        FrameGroupsCheckBox.IsEnabled = true;
+        FrameGroupsCheckBox.IsChecked = FrameGroupsCheckBox.IsChecked == true || version.Value >= 1057;
     }
 
     private void ServerExportCheckBox_Changed(object sender, RoutedEventArgs e)
@@ -127,8 +138,10 @@ public partial class CompileAssetDialog : Window
         }
 
         Options = new CompileAssetOptions(name, outputFolder, version,
-            ExtendedCheckBox.IsChecked == true, TransparencyCheckBox.IsChecked == true,
-            ImprovedAnimationsCheckBox.IsChecked == true, FrameGroupsCheckBox.IsChecked == true,
+            ExtendedCheckBox.IsChecked == true || version.Value >= 960,
+            TransparencyCheckBox.IsChecked == true,
+            ImprovedAnimationsCheckBox.IsChecked == true || version.Value >= 1050,
+            FrameGroupsCheckBox.IsChecked == true || version.Value >= 1057,
             exportServerItems, serverItemsFolder, serverFormat);
         DialogResult = true;
     }
