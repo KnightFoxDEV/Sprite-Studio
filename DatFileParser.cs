@@ -15,7 +15,7 @@ internal sealed record DatThing(uint Id, string Category, IReadOnlyList<DatFrame
     public int Width => PreviewGroup?.Width ?? 0;
     public int Height => PreviewGroup?.Height ?? 0;
 }
-internal sealed record DatFileModel(uint Signature, string VersionName, int VersionValue, ushort ItemCount, ushort OutfitCount, ushort EffectCount, ushort MissileCount, IReadOnlyList<DatThing> Things, bool Extended, bool ImprovedAnimations, bool FrameGroups, int MetadataReaderVersion);
+internal sealed record DatFileModel(uint Signature, string VersionName, int VersionValue, uint ItemCount, uint OutfitCount, uint EffectCount, uint MissileCount, IReadOnlyList<DatThing> Things, bool Extended, bool ImprovedAnimations, bool FrameGroups, int MetadataReaderVersion, bool Uses32BitIds = false);
 internal sealed record DatTargetVersion(int Value, string Name, uint DatSignature, uint SprSignature);
 
 internal static class ClientVersionCatalog
@@ -61,7 +61,9 @@ internal static class ClientVersionCatalog
 
 internal static class DatFileParser
 {
+    internal const uint Dat32Magic = 0x32335345; // "ES32"
     private const uint MaximumSpriteReferencesPerThing = 1_000_000;
+    internal const uint MaximumThingCountPerCategory = 1_000_000;
 
     public static DatFileModel Parse(string path, int? versionFallback = null, bool? extendedOverride = null, bool? improvedAnimationsOverride = null, bool? frameGroupsOverride = null)
     {
@@ -69,17 +71,22 @@ internal static class DatFileParser
         if (data.Length < 12) throw new InvalidDataException("The DAT file is too small to contain a valid header.");
         using var stream = new MemoryStream(data, writable: false);
         using var reader = new BinaryReader(stream);
-        var signature = ReadUInt32(reader);
+        var headerValue = ReadUInt32(reader);
+        var uses32BitIds = headerValue == Dat32Magic;
+        var signature = uses32BitIds ? ReadUInt32(reader) : headerValue;
         var version = ClientVersionCatalog.FindByDatSignature(signature);
         if (version is null && versionFallback is null)
             throw new InvalidDataException($"Unknown DAT signature 0x{signature:X8}. Open its matching SPR file first so the client version can be identified.");
 
         var versionValue = version?.Value ?? versionFallback!.Value;
         var versionName = version?.Name ?? $"Tibia {versionValue / 100}.{versionValue % 100:00}";
-        var itemCount = ReadUInt16(reader);
-        var outfitCount = ReadUInt16(reader);
-        var effectCount = ReadUInt16(reader);
-        var missileCount = ReadUInt16(reader);
+        var itemCount = uses32BitIds ? ReadUInt32(reader) : ReadUInt16(reader);
+        var outfitCount = uses32BitIds ? ReadUInt32(reader) : ReadUInt16(reader);
+        var effectCount = uses32BitIds ? ReadUInt32(reader) : ReadUInt16(reader);
+        var missileCount = uses32BitIds ? ReadUInt32(reader) : ReadUInt16(reader);
+        if (itemCount > MaximumThingCountPerCategory || outfitCount > MaximumThingCountPerCategory ||
+            effectCount > MaximumThingCountPerCategory || missileCount > MaximumThingCountPerCategory)
+            throw new InvalidDataException("The DAT declares an unreasonable number of objects in a category.");
         var readerVersion = DatPropertiesCodec.ReaderVersion(versionValue);
         var defaults = ReadFormatOptions(path, versionValue);
         var hasExplicitFormatOptions = extendedOverride.HasValue || improvedAnimationsOverride.HasValue || frameGroupsOverride.HasValue;
@@ -97,7 +104,7 @@ internal static class DatFileParser
                 try
                 {
                     things = ParseThings(data, layoutStart, itemCount, outfitCount, effectCount, missileCount,
-                        candidate, readerVersion, format.Extended, format.ImprovedAnimations, format.FrameGroups);
+                        candidate, readerVersion, format.Extended, format.ImprovedAnimations, format.FrameGroups, uses32BitIds);
                     selectedReaderVersion = candidate;
                     selectedFormat = format;
                     break;
@@ -114,21 +121,24 @@ internal static class DatFileParser
             throw new InvalidDataException(primaryError?.Message ?? "The DAT metadata could not be read.", primaryError);
 
         return new DatFileModel(signature, versionName, versionValue, itemCount, outfitCount, effectCount, missileCount,
-            things, selectedFormat.Extended, selectedFormat.ImprovedAnimations, selectedFormat.FrameGroups, selectedReaderVersion);
+            things, selectedFormat.Extended, selectedFormat.ImprovedAnimations, selectedFormat.FrameGroups, selectedReaderVersion, uses32BitIds);
     }
 
     private static IReadOnlyList<DatThing> ParseThings(byte[] data, long startPosition,
-        ushort itemCount, ushort outfitCount, ushort effectCount, ushort missileCount,
-        int propertyReaderVersion, int textureLayoutVersion, bool extended, bool improvedAnimations, bool frameGroups)
+        uint itemCount, uint outfitCount, uint effectCount, uint missileCount,
+        int propertyReaderVersion, int textureLayoutVersion, bool extended, bool improvedAnimations, bool frameGroups,
+        bool uses32BitIds)
     {
         using var stream = new MemoryStream(data, writable: false);
         stream.Position = startPosition;
         using var reader = new BinaryReader(stream);
-        var things = new List<DatThing>(Math.Min(100_000, itemCount + outfitCount + effectCount + missileCount));
-        ReadThings(reader, things, 100, itemCount, "item", textureLayoutVersion, propertyReaderVersion, extended, improvedAnimations, frameGroups);
-        ReadThings(reader, things, 1, outfitCount, "outfit", textureLayoutVersion, propertyReaderVersion, extended, improvedAnimations, frameGroups);
-        ReadThings(reader, things, 1, effectCount, "effect", textureLayoutVersion, propertyReaderVersion, extended, improvedAnimations, frameGroups);
-        ReadThings(reader, things, 1, missileCount, "missile", textureLayoutVersion, propertyReaderVersion, extended, improvedAnimations, frameGroups);
+        var totalCount = (ulong)itemCount + outfitCount + effectCount + missileCount;
+        var things = new List<DatThing>((int)Math.Min(100_000UL, totalCount));
+        var spriteIds32Bit = uses32BitIds || extended;
+        ReadThings(reader, things, 100, itemCount, "item", textureLayoutVersion, propertyReaderVersion, spriteIds32Bit, improvedAnimations, frameGroups);
+        ReadThings(reader, things, 1, outfitCount, "outfit", textureLayoutVersion, propertyReaderVersion, spriteIds32Bit, improvedAnimations, frameGroups);
+        ReadThings(reader, things, 1, effectCount, "effect", textureLayoutVersion, propertyReaderVersion, spriteIds32Bit, improvedAnimations, frameGroups);
+        ReadThings(reader, things, 1, missileCount, "missile", textureLayoutVersion, propertyReaderVersion, spriteIds32Bit, improvedAnimations, frameGroups);
         if (stream.Position != stream.Length)
             throw new InvalidDataException($"The DAT parser stopped at byte {stream.Position:N0} of {stream.Length:N0}. The selected client version may not match this file.");
         return things;

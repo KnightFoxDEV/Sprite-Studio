@@ -4067,10 +4067,10 @@ public partial class MainWindow : Window
     {
         return category switch
         {
-            "item" when model.ItemCount < ushort.MaxValue => Math.Max(100u, (uint)model.ItemCount + 1),
-            "outfit" when model.OutfitCount < ushort.MaxValue => (uint)model.OutfitCount + 1,
-            "effect" when model.EffectCount < ushort.MaxValue => (uint)model.EffectCount + 1,
-            "missile" when model.MissileCount < ushort.MaxValue => (uint)model.MissileCount + 1,
+            "item" when model.ItemCount < DatFileParser.MaximumThingCountPerCategory => Math.Max(100u, model.ItemCount + 1),
+            "outfit" when model.OutfitCount < DatFileParser.MaximumThingCountPerCategory => model.OutfitCount + 1,
+            "effect" when model.EffectCount < DatFileParser.MaximumThingCountPerCategory => model.EffectCount + 1,
+            "missile" when model.MissileCount < DatFileParser.MaximumThingCountPerCategory => model.MissileCount + 1,
             _ => throw new InvalidOperationException(Text("Esta categoria já atingiu o limite de IDs do DAT.", "This category has reached the DAT ID limit."))
         };
     }
@@ -4141,10 +4141,10 @@ public partial class MainWindow : Window
                 throw new InvalidOperationException(Text("O próximo ID já está em uso no DAT.", "The next ID is already used in the DAT."));
             updatedModel = thing.Category switch
             {
-                "item" => model with { ItemCount = checked((ushort)thing.Id), Things = OrderDatThings(model.Things.Append(validated)) },
-                "outfit" => model with { OutfitCount = checked((ushort)thing.Id), Things = OrderDatThings(model.Things.Append(validated)) },
-                "effect" => model with { EffectCount = checked((ushort)thing.Id), Things = OrderDatThings(model.Things.Append(validated)) },
-                "missile" => model with { MissileCount = checked((ushort)thing.Id), Things = OrderDatThings(model.Things.Append(validated)) },
+                "item" => model with { ItemCount = thing.Id, Uses32BitIds = model.Uses32BitIds || thing.Id > ushort.MaxValue, Things = OrderDatThings(model.Things.Append(validated)) },
+                "outfit" => model with { OutfitCount = thing.Id, Uses32BitIds = model.Uses32BitIds || thing.Id > ushort.MaxValue, Things = OrderDatThings(model.Things.Append(validated)) },
+                "effect" => model with { EffectCount = thing.Id, Uses32BitIds = model.Uses32BitIds || thing.Id > ushort.MaxValue, Things = OrderDatThings(model.Things.Append(validated)) },
+                "missile" => model with { MissileCount = thing.Id, Uses32BitIds = model.Uses32BitIds || thing.Id > ushort.MaxValue, Things = OrderDatThings(model.Things.Append(validated)) },
                 _ => throw new InvalidDataException(Text("Categoria DAT desconhecida.", "Unknown DAT category."))
             };
         }
@@ -5584,7 +5584,7 @@ public partial class MainWindow : Window
             var category = record.Thing.Category;
             if (!nextIds.TryGetValue(category, out var newId))
                 newId = GetNextDatThingId(model, category);
-            if (newId > ushort.MaxValue)
+            if (newId > DatFileParser.MaximumThingCountPerCategory)
                 throw new InvalidOperationException(Text($"A categoria {CategoryName(category)} não tem mais IDs livres no DAT.",
                     $"Category {CategoryName(category)} has no free IDs left in the DAT."));
             nextIds[category] = newId + 1;
@@ -5778,7 +5778,13 @@ public partial class MainWindow : Window
         Span<byte> signature = stackalloc byte[4];
         using var stream = File.OpenRead(path);
         stream.ReadExactly(signature);
-        return BinaryPrimitives.ReadUInt32LittleEndian(signature);
+        var value = BinaryPrimitives.ReadUInt32LittleEndian(signature);
+        if (Path.GetExtension(path).Equals(".dat", StringComparison.OrdinalIgnoreCase) && value == DatFileParser.Dat32Magic)
+        {
+            stream.ReadExactly(signature);
+            return BinaryPrimitives.ReadUInt32LittleEndian(signature);
+        }
+        return value;
     }
 
     private async Task LoadDatAsync(string path)
@@ -6636,15 +6642,17 @@ public partial class MainWindow : Window
         _ => throw new InvalidDataException("Unknown DAT category.")
     };
 
-    private static DatFileModel WithDatCategoryCount(DatFileModel model, string category, uint count)
+    private DatFileModel WithDatCategoryCount(DatFileModel model, string category, uint count)
     {
-        var value = checked((ushort)count);
+        if (count > DatFileParser.MaximumThingCountPerCategory)
+            throw new InvalidDataException(Text("O limite seguro de objetos por categoria DAT foi atingido.", "The safe DAT objects-per-category limit has been reached."));
+        var uses32BitIds = model.Uses32BitIds || count > ushort.MaxValue;
         return category switch
         {
-            "item" => model with { ItemCount = value },
-            "outfit" => model with { OutfitCount = value },
-            "effect" => model with { EffectCount = value },
-            "missile" => model with { MissileCount = value },
+            "item" => model with { ItemCount = count, Uses32BitIds = uses32BitIds },
+            "outfit" => model with { OutfitCount = count, Uses32BitIds = uses32BitIds },
+            "effect" => model with { EffectCount = count, Uses32BitIds = uses32BitIds },
+            "missile" => model with { MissileCount = count, Uses32BitIds = uses32BitIds },
             _ => throw new InvalidDataException("Unknown DAT category.")
         };
     }

@@ -12,13 +12,28 @@ internal static class DatFileWriter
         using var stream = new MemoryStream();
         using var writer = new BinaryWriter(stream);
 
-        writer.Write(model.Signature);
-        writer.Write(model.ItemCount);
-        writer.Write(model.OutfitCount);
-        writer.Write(model.EffectCount);
-        writer.Write(model.MissileCount);
+        var uses32BitIds = model.Uses32BitIds || model.ItemCount > ushort.MaxValue ||
+            model.OutfitCount > ushort.MaxValue || model.EffectCount > ushort.MaxValue ||
+            model.MissileCount > ushort.MaxValue;
+        if (uses32BitIds)
+        {
+            writer.Write(DatFileParser.Dat32Magic);
+            writer.Write(model.Signature);
+            writer.Write(model.ItemCount);
+            writer.Write(model.OutfitCount);
+            writer.Write(model.EffectCount);
+            writer.Write(model.MissileCount);
+        }
+        else
+        {
+            writer.Write(model.Signature);
+            writer.Write(checked((ushort)model.ItemCount));
+            writer.Write(checked((ushort)model.OutfitCount));
+            writer.Write(checked((ushort)model.EffectCount));
+            writer.Write(checked((ushort)model.MissileCount));
+        }
 
-        var extended = extendedOverride ?? model.Extended;
+        var extended = (extendedOverride ?? model.Extended) || uses32BitIds;
         var improvedAnimations = improvedAnimationsOverride ?? model.ImprovedAnimations;
         var hasFrameGroups = frameGroupsOverride ?? model.FrameGroups;
         foreach (var thing in model.Things)

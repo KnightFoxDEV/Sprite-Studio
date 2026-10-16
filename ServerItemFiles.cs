@@ -11,6 +11,8 @@ internal sealed class ServerItemFiles
     private const byte NodeStart = 0xFE;
     private const byte NodeEnd = 0xFF;
     private const byte Escape = 0xFD;
+    private const byte ItemAttrServerId32 = 0xF0;
+    private const byte ItemAttrClientId32 = 0xF1;
     private static readonly UTF8Encoding Utf8 = new(false);
     private readonly byte[] _fileHeader;
     private readonly OtbNode _root;
@@ -233,18 +235,17 @@ internal sealed class ServerItemFiles
     public bool AddFromDat(DatThing thing, int clientVersion)
     {
         if (thing.Category != "item" || FindItem(thing.Id) is not null) return false;
-        if (thing.Id > ushort.MaxValue) throw new InvalidDataException("O ID do item excede o limite do items.otb.");
         var fields = DatPropertiesCodec.Read(thing.RawProperties, clientVersion);
         var group = DatPropertiesCodec.Get(fields, "ground").Enabled ? (byte)1
             : DatPropertiesCodec.Get(fields, "container").Enabled ? (byte)2
             : DatPropertiesCodec.Get(fields, "fluidContainer").Enabled ? (byte)12
             : DatPropertiesCodec.Get(fields, "fluid").Enabled ? (byte)11 : (byte)0;
-        var maxServerId = _items.Count == 0 ? 99 : _items.Max(item => item.ServerId);
-        if (maxServerId == ushort.MaxValue) throw new InvalidDataException("Não há mais IDs disponíveis no items.otb.");
+        var maxServerId = _items.Count == 0 ? 99u : _items.Max(item => item.ServerId);
+        if (maxServerId == uint.MaxValue) throw new InvalidDataException("Não há mais IDs disponíveis no items.otb.");
         var newItem = OtbItem.CreateNew(group);
         var node = newItem.Node;
-        newItem.SetUInt16(0x10, checked((ushort)(maxServerId + 1)));
-        newItem.SetUInt16(0x11, checked((ushort)thing.Id));
+        newItem.SetUInt32(ItemAttrServerId32, maxServerId + 1);
+        newItem.SetUInt32(ItemAttrClientId32, thing.Id);
         newItem.SetAttribute(0x20, new byte[16]);
         _root.Children.Add(node);
         _items.Add(newItem);
@@ -259,12 +260,10 @@ internal sealed class ServerItemFiles
         var missing = things.Where(thing => thing.Category == "item" && FindItem(thing.Id) is null).ToArray();
         foreach (var thing in missing)
         {
-            if (thing.Id > ushort.MaxValue)
-                throw new InvalidDataException("O ID do item excede o limite do items.otb.");
             _ = DatPropertiesCodec.Read(thing.RawProperties, clientVersion);
         }
-        var maxServerId = _items.Count == 0 ? 99 : _items.Max(item => item.ServerId);
-        if ((long)maxServerId + missing.Length > ushort.MaxValue)
+        var maxServerId = _items.Count == 0 ? 99u : _items.Max(item => item.ServerId);
+        if ((ulong)maxServerId + (ulong)missing.Length > uint.MaxValue)
             throw new InvalidDataException("Não há mais IDs disponíveis no items.otb para todos os itens importados.");
     }
 
@@ -303,17 +302,17 @@ internal sealed class ServerItemFiles
 
     private OtbItem? FindItem(uint clientId) => _itemsByClientId.GetValueOrDefault(clientId);
 
-    private XElement? FindXmlItem(ushort serverId)
+    private XElement? FindXmlItem(uint serverId)
     {
         if (_xml?.Root is null) return null;
         var idText = serverId.ToString(System.Globalization.CultureInfo.InvariantCulture);
         var candidates = _xml.Root.DescendantsAndSelf().Where(element => element.Name.LocalName == "item");
         return candidates.LastOrDefault(element => (string?)element.Attribute("id") == idText)
-            ?? candidates.LastOrDefault(element => ushort.TryParse((string?)element.Attribute("fromid"), out var from)
-                && ushort.TryParse((string?)element.Attribute("toid"), out var to) && serverId >= from && serverId <= to);
+            ?? candidates.LastOrDefault(element => uint.TryParse((string?)element.Attribute("fromid"), out var from)
+                && uint.TryParse((string?)element.Attribute("toid"), out var to) && serverId >= from && serverId <= to);
     }
 
-    private XElement? FindExactXmlItem(ushort serverId)
+    private XElement? FindExactXmlItem(uint serverId)
     {
         if (_xml?.Root is null) return null;
         var idText = serverId.ToString(System.Globalization.CultureInfo.InvariantCulture);
@@ -321,15 +320,15 @@ internal sealed class ServerItemFiles
             && (string?)element.Attribute("id") == idText);
     }
 
-    private XElement? FindXmlRangeItem(ushort serverId)
+    private XElement? FindXmlRangeItem(uint serverId)
     {
         if (_xml?.Root is null) return null;
         return _xml.Root.DescendantsAndSelf().LastOrDefault(element => element.Name.LocalName == "item"
-            && ushort.TryParse((string?)element.Attribute("fromid"), out var from)
-            && ushort.TryParse((string?)element.Attribute("toid"), out var to) && serverId >= from && serverId <= to);
+            && uint.TryParse((string?)element.Attribute("fromid"), out var from)
+            && uint.TryParse((string?)element.Attribute("toid"), out var to) && serverId >= from && serverId <= to);
     }
 
-    private XElement GetOrCreateExactXmlItem(ushort serverId)
+    private XElement GetOrCreateExactXmlItem(uint serverId)
     {
         if (_xml?.Root is null) throw new InvalidDataException("O items.xml não tem um elemento principal.");
         var exact = FindExactXmlItem(serverId);
@@ -447,7 +446,7 @@ internal sealed class ServerItemFiles
             _group = node.Type;
             _flags = BinaryPrimitives.ReadUInt32LittleEndian(node.Data.AsSpan(0, 4));
             foreach (var attribute in Attributes())
-                if (attribute.Data.Length < (attribute.Id is 0x10 or 0x11 ? 2 : 0))
+                if (attribute.Data.Length < (attribute.Id is 0x10 or 0x11 ? 2 : attribute.Id is ItemAttrServerId32 or ItemAttrClientId32 ? 4 : 0))
                     throw new InvalidDataException("Um atributo de item no items.otb está incompleto.");
         }
 
@@ -460,8 +459,8 @@ internal sealed class ServerItemFiles
 
         public OtbNode Node => _node;
         public byte Group => _group;
-        public ushort ServerId => ReadU16(0x10);
-        public uint ClientId => ReadU16(0x11);
+        public uint ServerId => ReadId(ItemAttrServerId32, 0x10);
+        public uint ClientId => ReadId(ItemAttrClientId32, 0x11);
 
         public ServerItemInfo GetInfo() => new(ServerId, ClientId, ReadString(0x12), ReadU16(0x14), ReadU16(0x21),
             ReadPair(0x2A, 0), ReadPair(0x2A, 2), ReadU16(0x2D), _flags);
@@ -477,6 +476,13 @@ internal sealed class ServerItemFiles
 
         public bool SetName(string value) => SetAttribute(0x12, value.Length == 0 ? null : Utf8.GetBytes(value));
         public bool SetUInt16(byte id, ushort value) => SetAttribute(id, value == 0 ? null : U16Bytes(value));
+        public bool SetUInt32(byte id, uint value)
+        {
+            if (value == 0) return SetAttribute(id, null);
+            var bytes = new byte[4];
+            BinaryPrimitives.WriteUInt32LittleEndian(bytes, value);
+            return SetAttribute(id, bytes);
+        }
         public bool SetByte(byte id, int value) => SetAttribute(id, value == 0 ? null : [(byte)value]);
 
         public bool SetLight(ushort level, ushort color)
@@ -492,6 +498,14 @@ internal sealed class ServerItemFiles
         {
             var attr = Attributes().LastOrDefault(value => value.Id == id);
             return attr is { Data.Length: >= 2 } ? BinaryPrimitives.ReadUInt16LittleEndian(attr.Data) : (ushort)0;
+        }
+
+        private uint ReadId(byte id32, byte legacyId)
+        {
+            var attr = Attributes().LastOrDefault(value => value.Id == id32);
+            return attr is { Data.Length: >= 4 }
+                ? BinaryPrimitives.ReadUInt32LittleEndian(attr.Data)
+                : ReadU16(legacyId);
         }
 
         private ushort ReadPair(byte id, int offset)
@@ -564,7 +578,7 @@ internal sealed class ServerItemFiles
     private sealed record OtbAttribute(byte Id, byte[] Data);
 }
 
-internal sealed record ServerItemInfo(ushort ServerId, uint ClientId, string Name, ushort GroundSpeed,
+internal sealed record ServerItemInfo(uint ServerId, uint ClientId, string Name, ushort GroundSpeed,
     ushort MinimapColor, ushort LightLevel, ushort LightColor, ushort TradeAs, uint Flags);
 internal sealed record XmlItemInfo(string Name, string Article, string Plural);
 internal sealed record XmlItemAttributeInfo(string Key, string Value);
