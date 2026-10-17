@@ -12,7 +12,7 @@ internal sealed class DatTransferTargetDialog : Window
 
     public MainWindow? SelectedTarget => (_targets.SelectedItem as DatTransferTargetOption)?.Window;
 
-    public DatTransferTargetDialog(IReadOnlyList<DatTransferTargetOption> targets, bool isEnglish)
+    public DatTransferTargetDialog(IReadOnlyList<DatTransferTargetOption> targets, bool isEnglish, bool replaceSprites = false)
     {
         string Text(string pt, string en) => isEnglish ? en : pt;
         Brush Brush(string key) =>
@@ -38,7 +38,8 @@ internal sealed class DatTransferTargetDialog : Window
 
         var title = new TextBlock
         {
-            Text = Text("Para qual janela transferir?", "Which window should receive the objects?"),
+            Text = replaceSprites ? Text("Em qual janela substituir?", "Which window should be updated?")
+                : Text("Para qual janela transferir?", "Which window should receive the objects?"),
             FontSize = 15,
             FontWeight = FontWeights.SemiBold,
             Foreground = Brush("TextBrush"),
@@ -49,7 +50,9 @@ internal sealed class DatTransferTargetDialog : Window
 
         var description = new TextBlock
         {
-            Text = Text("O editor escolhido receberá os objetos selecionados e seus sprites.",
+            Text = replaceSprites ? Text("Selecione a mesma quantidade de sprites nas duas janelas. A substituição segue a ordem crescente dos IDs.",
+                "Select the same number of sprites in both windows. Replacement follows ascending ID order.")
+                : Text("O editor escolhido receberá os objetos selecionados e seus sprites.",
                 "The selected editor will receive the selected objects and their sprites."),
             Foreground = Brush("MutedBrush"),
             TextWrapping = TextWrapping.Wrap,
@@ -76,7 +79,7 @@ internal sealed class DatTransferTargetDialog : Window
         buttons.Children.Add(cancel);
         var transfer = new Button
         {
-            Content = Text("Transferir", "Transfer"),
+            Content = replaceSprites ? Text("Continuar", "Continue") : Text("Transferir", "Transfer"),
             Style = (Style)Application.Current.FindResource("PrimaryButton"),
             MinWidth = 92,
             Padding = new Thickness(10, 5, 10, 5),

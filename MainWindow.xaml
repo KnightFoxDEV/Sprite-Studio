@@ -304,21 +304,24 @@
                         </Grid>
                     </Border>
 
-                    <StackPanel x:Name="DatActionToolbar" Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6,0,0" Visibility="Collapsed">
-                        <Button x:Name="DatNewButton" Content="＋" Width="37" Height="29" Padding="0" Margin="1,0" FontSize="13" Click="DatNewButton_Click" />
-                        <Button x:Name="DatReplaceButton" Content="↻" Width="37" Height="29" Padding="0" Margin="1,0" FontSize="13" Click="DatReplaceButton_Click" />
-                        <Button x:Name="DatDuplicateButton" Content="⧉" Width="37" Height="29" Padding="0" Margin="1,0" FontSize="13" Click="DatDuplicateButton_Click" />
-                        <Button x:Name="DatImportButton" Content="⇧" Width="37" Height="29" Padding="0" Margin="1,0" FontSize="13" Click="DatImportButton_Click" />
-                        <Button x:Name="DatExportButton" Content="⇩" Width="37" Height="29" Padding="0" Margin="1,0" FontSize="13" Click="DatExportButton_Click" />
-                        <Button x:Name="DatTransferButton" Content="⇄" Width="37" Height="29" Padding="0" Margin="1,0" FontSize="13" Click="DatTransferButton_Click" />
-                        <Button x:Name="DatDeleteButton" Content="⌫" Width="37" Height="29" Padding="0" Margin="1,0" FontSize="13" Click="DatDeleteButton_Click" />
-                    </StackPanel>
-                    <StackPanel x:Name="PagerPanel" Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,8,0,0" Visibility="Collapsed">
-                        <Button x:Name="FirstPageButton" Content="|←" Padding="7,4" Click="FirstPageButton_Click" ToolTip="Primeira página" />
-                        <Button x:Name="PreviousPageButton" Content="←" Padding="8,4" Click="PreviousPageButton_Click" />
-                        <TextBlock x:Name="PageText" Text="Página 1 de 1" Foreground="{DynamicResource MutedBrush}" FontSize="9" VerticalAlignment="Center" Margin="10,0" />
-                        <Button x:Name="NextPageButton" Content="→" Padding="8,4" Click="NextPageButton_Click" />
-                        <Button x:Name="LastPageButton" Content="→|" Padding="7,4" Click="LastPageButton_Click" ToolTip="Última página" />
+                    <WrapPanel x:Name="DatActionToolbar" Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Stretch" Margin="0,6,0,0" Visibility="Collapsed">
+                        <Button x:Name="DatNewButton" Content="＋" Width="37" Height="29" Padding="0" Margin="1,0,1,4" FontSize="13" Click="DatNewButton_Click" />
+                        <Button x:Name="DatReplaceButton" Content="↻" Width="37" Height="29" Padding="0" Margin="1,0,1,4" FontSize="13" Click="DatReplaceButton_Click" />
+                        <Button x:Name="DatDuplicateButton" Content="⧉" Width="37" Height="29" Padding="0" Margin="1,0,1,4" FontSize="13" Click="DatDuplicateButton_Click" />
+                        <Button x:Name="DatImportButton" Content="⇧" Width="37" Height="29" Padding="0" Margin="1,0,1,4" FontSize="13" Click="DatImportButton_Click" />
+                        <Button x:Name="DatExportButton" Content="⇩" Width="37" Height="29" Padding="0" Margin="1,0,1,4" FontSize="13" Click="DatExportButton_Click" />
+                        <Button x:Name="DatTransferButton" Content="⇄" Width="37" Height="29" Padding="0" Margin="1,0,1,4" FontSize="13" Click="DatTransferButton_Click" />
+                        <Button x:Name="DatReplaceAcrossWindowsButton" Content="↻⇄" Width="45" Height="29" Padding="0" Margin="1,0,1,4" FontSize="13" Click="DatReplaceAcrossWindowsButton_Click" />
+                        <Button x:Name="DatDeleteButton" Content="⌫" Width="37" Height="29" Padding="0" Margin="1,0,1,4" FontSize="13" Click="DatDeleteButton_Click" />
+                    </WrapPanel>
+                    <StackPanel x:Name="PagerPanel" Grid.Row="4" Margin="0,8,0,0" Visibility="Collapsed">
+                        <UniformGrid Rows="1" Columns="4" HorizontalAlignment="Center">
+                            <Button x:Name="FirstPageButton" Content="|←" Width="36" Padding="4,4" Margin="2,0" Click="FirstPageButton_Click" ToolTip="Primeira página" />
+                            <Button x:Name="PreviousPageButton" Content="←" Width="36" Padding="4,4" Margin="2,0" Click="PreviousPageButton_Click" />
+                            <Button x:Name="NextPageButton" Content="→" Width="36" Padding="4,4" Margin="2,0" Click="NextPageButton_Click" />
+                            <Button x:Name="LastPageButton" Content="→|" Width="36" Padding="4,4" Margin="2,0" Click="LastPageButton_Click" ToolTip="Última página" />
+                        </UniformGrid>
+                        <TextBlock x:Name="PageText" Text="Página 1 de 1" Foreground="{DynamicResource MutedBrush}" FontSize="9" TextAlignment="Center" TextWrapping="Wrap" Margin="4,5,4,0" />
                     </StackPanel>
                     <TextBlock x:Name="ErrorText" Grid.Row="5" Foreground="{DynamicResource ErrorBrush}" FontSize="9" TextWrapping="Wrap" Margin="2,7,2,0" Visibility="Collapsed" />
                 </Grid>
@@ -691,14 +694,15 @@
                         <Button x:Name="AutoAssembleSpritesButton" Grid.Column="1" Content="Montar automaticamente" Style="{StaticResource PrimaryButton}"
                                 Padding="4,5" FontSize="8" Click="AutoAssembleSpritesButton_Click" Margin="3,0,1,0" IsEnabled="False" />
                     </Grid>
-                    <StackPanel x:Name="SpriteActionToolbar" Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6,0,0" Visibility="Collapsed">
-                        <Button x:Name="NewSpriteButton" Content="＋" Width="37" Height="29" Padding="0" Margin="1,0" FontSize="13" Click="NewSpriteButton_Click" />
-                        <Button x:Name="ReplaceSpriteButton" Content="↻" Width="37" Height="29" Padding="0" Margin="1,0" FontSize="13" Click="ReplaceSpriteButton_Click" />
-                        <Button x:Name="DuplicateSpriteButton" Content="⧉" Width="37" Height="29" Padding="0" Margin="1,0" FontSize="13" Click="DuplicateSpriteButton_Click" />
-                        <Button x:Name="ImportSpriteButton" Content="⇧" Width="37" Height="29" Padding="0" Margin="1,0" FontSize="13" Click="ImportSpriteButton_Click" />
-                        <Button x:Name="ExportSpriteButton" Content="⇩" Width="37" Height="29" Padding="0" Margin="1,0" FontSize="13" Click="ExportSpriteButton_Click" />
-                        <Button x:Name="DeleteSpriteButton" Content="⌫" Width="37" Height="29" Padding="0" Margin="1,0" FontSize="13" Click="DeleteSpriteButton_Click" />
-                    </StackPanel>
+                    <WrapPanel x:Name="SpriteActionToolbar" Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Stretch" Margin="0,6,0,0" Visibility="Collapsed">
+                        <Button x:Name="NewSpriteButton" Content="＋" Width="37" Height="29" Padding="0" Margin="1,0,1,4" FontSize="13" Click="NewSpriteButton_Click" />
+                        <Button x:Name="ReplaceSpriteButton" Content="↻" Width="37" Height="29" Padding="0" Margin="1,0,1,4" FontSize="13" Click="ReplaceSpriteButton_Click" />
+                        <Button x:Name="ReplaceSpritesAcrossWindowsButton" Content="⇄" Width="37" Height="29" Padding="0" Margin="1,0,1,4" FontSize="13" Click="ReplaceSpritesAcrossWindowsButton_Click" />
+                        <Button x:Name="DuplicateSpriteButton" Content="⧉" Width="37" Height="29" Padding="0" Margin="1,0,1,4" FontSize="13" Click="DuplicateSpriteButton_Click" />
+                        <Button x:Name="ImportSpriteButton" Content="⇧" Width="37" Height="29" Padding="0" Margin="1,0,1,4" FontSize="13" Click="ImportSpriteButton_Click" />
+                        <Button x:Name="ExportSpriteButton" Content="⇩" Width="37" Height="29" Padding="0" Margin="1,0,1,4" FontSize="13" Click="ExportSpriteButton_Click" />
+                        <Button x:Name="DeleteSpriteButton" Content="⌫" Width="37" Height="29" Padding="0" Margin="1,0,1,4" FontSize="13" Click="DeleteSpriteButton_Click" />
+                    </WrapPanel>
                     <TextBlock x:Name="ObjectSpriteRangeText" Grid.Row="4" Text="—" Foreground="{DynamicResource MutedBrush}" FontSize="8" HorizontalAlignment="Center" Margin="0,6,0,1" />
                     <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,0">
                         <Button x:Name="ObjectSpriteFirstButton" Content="|←" Width="29" Padding="3,4" FontSize="9" ToolTip="Primeiro sprite" Click="ObjectSpriteFirstButton_Click" />

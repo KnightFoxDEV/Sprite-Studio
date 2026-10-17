@@ -421,6 +421,7 @@ public partial class MainWindow : Window
         ObjectSpriteIdInput.ToolTip = Text("ID do sprite atual", "Current sprite ID");
         NewSpriteButton.ToolTip = Text("Novo: criar um quadrado vazio de 32 × 32", "New: create a blank 32 × 32 sprite");
         ReplaceSpriteButton.ToolTip = Text("Substituir o sprite selecionado", "Replace the selected sprite");
+        ReplaceSpritesAcrossWindowsButton.ToolTip = Text("Substituir sprites selecionados em outra janela (mesma quantidade, em ordem de ID)", "Replace selected sprites in another window (same count, in ID order)");
         DuplicateSpriteButton.ToolTip = Text("Duplicar o sprite selecionado", "Duplicate the selected sprite");
         ImportSpriteButton.ToolTip = Text("Importar uma ou mais imagens PNG ou BMP de 32 × 32", "Import one or more 32 × 32 PNG or BMP images");
         ExportSpriteButton.ToolTip = Text("Exportar o sprite selecionado como PNG", "Export the selected sprite as PNG");
@@ -431,6 +432,7 @@ public partial class MainWindow : Window
         DatImportButton.ToolTip = Text("Importar um objeto exportado pelo Studio como novo objeto", "Import a Studio object export as a new object");
         DatExportButton.ToolTip = Text("Exportar a seleção ou escolher uma categoria e faixa completa", "Export the selection or choose a full category and range");
         DatTransferButton.ToolTip = Text("Enviar os objetos selecionados para outra janela do editor", "Send selected objects to another editor window");
+        DatReplaceAcrossWindowsButton.ToolTip = Text("Substituir os objetos DAT selecionados em outra janela, mantendo os IDs do destino", "Replace selected DAT objects in another window, preserving destination IDs");
         DatDeleteButton.ToolTip = Text("Excluir o objeto selecionado; objetos no meio da lista serão limpos para preservar os IDs seguintes", "Delete the selected object; objects between IDs are cleared to preserve later IDs");
         FindButton.Content = Text("Buscar", "Find");
         SearchBox.ToolTip = Text("Digite o ID e pressione Enter para ir até ele", "Enter an ID and press Enter to jump to it");
@@ -3420,7 +3422,13 @@ public partial class MainWindow : Window
         window.Width = width;
         window.Height = height;
     }
+    private async void DatReplaceAcrossWindowsButton_Click(object sender, RoutedEventArgs e)
+        => await TransferDatSelectionAsync(replace: true);
+
     private async void DatTransferButton_Click(object sender, RoutedEventArgs e)
+        => await TransferDatSelectionAsync(replace: false);
+
+    private async Task TransferDatSelectionAsync(bool replace)
     {
         var sourceModel = _datModel;
         var sourceSpr = _sprStream;
@@ -3474,6 +3482,16 @@ public partial class MainWindow : Window
             return;
         }
 
+        var replacementTargets = replace ? destination.GetSelectedDatThings().ToArray() : null;
+        if (replace && (replacementTargets!.Length != things.Count
+            || replacementTargets.Any(target => target.Category != things[0].Category)))
+        {
+            MessageBox.Show(this, Text(
+                $"Selecione a mesma categoria e a mesma quantidade de objetos DAT nas duas janelas. Origem: {things.Count:N0}; destino: {replacementTargets.Length:N0}. Use Ctrl ou Shift para selecionar vários objetos.",
+                $"Select the same category and number of DAT objects in both windows. Source: {things.Count:N0}; destination: {replacementTargets.Length:N0}. Use Ctrl or Shift to select multiple objects."),
+                Text("Seleções incompatíveis", "Incompatible selections"), MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
         var spriteCount = things.Sum(thing =>
         {
             var groups = thing.Category == "outfit" ? thing.FrameGroups : thing.FrameGroups.Take(1).ToArray();
@@ -3483,7 +3501,16 @@ public partial class MainWindow : Window
         var prompt = Text(
             $"Transferir {things.Count:N0} objeto(s) e até {spriteCount:N0} sprites vinculados para {Path.GetFileName(destination._datPath)}? Os objetos receberão novos IDs no final da categoria. Salve tudo na janela de destino para gravar as alterações.",
             $"Transfer {things.Count:N0} object(s) and up to {spriteCount:N0} linked sprites to {Path.GetFileName(destination._datPath)}? Objects will receive new IDs at the end of the category. Save all in the destination window to write the changes.");
-        if (!ConfirmWithTheme(Text("Confirmar transferência", "Confirm transfer"), prompt, defaultNo: true))
+        if (replace)
+        {
+            var pairs = string.Join("\n", things.Zip(replacementTargets!).Take(8)
+                .Select(pair => $"#{pair.First.Id} → #{pair.Second.Id}"));
+            if (things.Count > 8) pairs += "\n…";
+            prompt = Text(
+                $"Substituir {things.Count:N0} objeto(s) em {destination._datPath}?\n\n{pairs}\n\nOs pares seguem a ordem crescente dos IDs. Serão substituídos os atributos, sprites e animações, mantendo os IDs DAT do destino. Os sprites serão adicionados ao SPR de destino. Salve tudo na janela de destino para gravar o DAT.",
+                $"Replace {things.Count:N0} object(s) in {destination._datPath}?\n\n{pairs}\n\nPairs follow ascending ID order. Attributes, sprites and animations will be replaced, preserving destination DAT IDs. Sprites will be appended to the destination SPR. Save all in the destination window to write the DAT.");
+        }
+        if (!ConfirmWithTheme(replace ? Text("Confirmar substituição", "Confirm replacement") : Text("Confirmar transferência", "Confirm transfer"), prompt, defaultNo: true))
             return;
 
         if (!OpenEditorWindows.Contains(destination) || destination._datModel is null || destination._sprStream is null
@@ -3518,12 +3545,13 @@ public partial class MainWindow : Window
                 obdPaths.Add(path);
             }
 
-            await destination.ImportObdFolderAsync(obdPaths);
+            await destination.ImportObdFolderAsync(obdPaths, replacementTargets);
             destination.IsEnabled = true;
             if (destination.WindowState == WindowState.Minimized) destination.WindowState = WindowState.Normal;
             destination.Activate();
-            StatusText.Text = Text($"Transferidos {things.Count:N0} objeto(s).",
-                $"Transferred {things.Count:N0} object(s).");
+            StatusText.Text = replace
+                ? Text($"Substituídos {things.Count:N0} objeto(s) na outra janela. Salve tudo no destino.", $"Replaced {things.Count:N0} object(s) in the other window. Save all in the destination.")
+                : Text($"Transferidos {things.Count:N0} objeto(s).", $"Transferred {things.Count:N0} object(s).");
         }
         catch (Exception ex)
         {
@@ -4894,6 +4922,7 @@ public partial class MainWindow : Window
         NewSpriteButton.IsEnabled = hasSpr && !_sprEditInProgress;
         ImportSpriteButton.IsEnabled = hasSpr && !_sprEditInProgress;
         ReplaceSpriteButton.IsEnabled = hasSelectedSprite && !_sprEditInProgress;
+        ReplaceSpritesAcrossWindowsButton.IsEnabled = hasSpr && deletableSelectionCount > 0 && !_sprEditInProgress;
         DuplicateSpriteButton.IsEnabled = hasSelectedBitmap && !_sprEditInProgress;
         ExportSpriteButton.IsEnabled = hasSelectedBitmap;
         DeleteSpriteButton.IsEnabled = deletableSelectionCount > 0 && !_sprEditInProgress;
@@ -5337,6 +5366,96 @@ public partial class MainWindow : Window
         });
     }
 
+    private async void ReplaceSpritesAcrossWindowsButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_sprStream is null || _sprEditInProgress) return;
+        var sourceIds = _selectedObjectSpriteIds.Where(id => id > 0 && id <= _spriteCount).Order().ToArray();
+        if (sourceIds.Length == 0) return;
+        var targets = OpenEditorWindows
+            .Where(window => window != this && window._sprStream is not null && window._filePath is not null
+                && !window._sprEditInProgress && window.IsEnabled)
+            .Select(window => new DatTransferTargetOption(window,
+                $"{window.Title} — {window._filePath}"))
+            .ToArray();
+        if (targets.Length == 0)
+        {
+            MessageBox.Show(this, Text("Abra um SPR em outra janela e selecione nela os sprites que serão substituídos.",
+                "Open an SPR in another window and select the sprites to replace there."),
+                Text("Destino indisponível", "Destination unavailable"), MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        MainWindow? destination = targets[0].Window;
+        if (targets.Length > 1)
+        {
+            var picker = new DatTransferTargetDialog(targets, IsEnglish, replaceSprites: true) { Owner = this };
+            if (picker.ShowDialog() != true) return;
+            destination = picker.SelectedTarget;
+        }
+        if (destination is null || !OpenEditorWindows.Contains(destination) || destination._sprStream is null
+            || destination._sprEditInProgress || !destination.IsEnabled) return;
+        var destinationIds = destination._selectedObjectSpriteIds
+            .Where(id => id > 0 && id <= destination._spriteCount).Order().ToArray();
+        if (sourceIds.Length != destinationIds.Length)
+        {
+            MessageBox.Show(this, Text(
+                $"Selecione a mesma quantidade de sprites nas duas janelas. Origem: {sourceIds.Length:N0}; destino: {destinationIds.Length:N0}. Use Ctrl ou Shift para marcar vários sprites, ou Selecionar página.",
+                $"Select the same number of sprites in both windows. Source: {sourceIds.Length:N0}; destination: {destinationIds.Length:N0}. Use Ctrl or Shift to select multiple sprites, or Select page."),
+                Text("Seleções diferentes", "Selection counts differ"), MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        var sourceStream = _sprStream;
+        var destinationStream = destination._sprStream;
+        var pairs = string.Join("\n", sourceIds.Zip(destinationIds).Take(8)
+            .Select(pair => $"#{pair.First} → #{pair.Second}"));
+        if (sourceIds.Length > 8) pairs += "\n…";
+        if (!ConfirmWithTheme(Text("Substituir sprites em outra janela", "Replace sprites in another window"),
+            Text($"Substituir {sourceIds.Length:N0} sprite(s) em {destination._filePath}?\n\n{pairs}\n\nA ordem é crescente por ID. Os IDs do destino serão mantidos e os objetos que os utilizam passarão a exibir as novas imagens. O SPR de destino será gravado.",
+                $"Replace {sourceIds.Length:N0} sprite(s) in {destination._filePath}?\n\n{pairs}\n\nPairs follow ascending ID order. Destination IDs will be preserved and objects using them will display the new images. The destination SPR will be saved."), defaultNo: true)) return;
+        if (!OpenEditorWindows.Contains(destination) || _sprStream != sourceStream
+            || destination._sprStream != destinationStream || _sprEditInProgress || destination._sprEditInProgress
+            || !destination.IsEnabled) return;
+
+        IsEnabled = false;
+        destination.IsEnabled = false;
+        try
+        {
+            var replacements = new Dictionary<uint, BitmapSource>(sourceIds.Length);
+            for (var index = 0; index < sourceIds.Length; index++)
+            {
+                StatusText.Text = Text($"Preparando sprite {index + 1:N0}/{sourceIds.Length:N0}…",
+                    $"Preparing sprite {index + 1:N0}/{sourceIds.Length:N0}…");
+                var offset = _offsets[sourceIds[index] - 1];
+                if (offset != 0 && offset + 5L > RandomAccess.GetLength(sourceStream.SafeFileHandle))
+                    throw new InvalidDataException(Text($"O sprite #{sourceIds[index]} está incompleto.",
+                        $"Sprite #{sourceIds[index]} is truncated."));
+                var bitmap = await ReadSpriteBitmapAsync(sourceIds[index], sourceStream.SafeFileHandle)
+                    ?? throw new InvalidDataException(Text($"Não foi possível ler o sprite #{sourceIds[index]}.",
+                        $"Could not read sprite #{sourceIds[index]}."));
+                replacements.Add(destinationIds[index], bitmap);
+            }
+            await destination.SaveSprChangesAsync([], replacements);
+            StatusText.Text = Text($"{sourceIds.Length:N0} sprite(s) substituído(s) na outra janela.",
+                $"{sourceIds.Length:N0} sprite(s) replaced in the other window.");
+            destination.IsEnabled = true;
+            if (destination.WindowState == WindowState.Minimized) destination.WindowState = WindowState.Normal;
+            destination.Activate();
+            destination.ShowSpriteOperationComplete(destination.Text(
+                $"{sourceIds.Length:N0} sprite(s) substituído(s), mantendo os IDs do destino.",
+                $"{sourceIds.Length:N0} sprite(s) replaced, preserving destination IDs."));
+        }
+        catch (Exception ex)
+        {
+            SetError(ex.Message);
+            MessageBox.Show(this, ex.Message, Text("Falha ao substituir sprites", "Sprite replacement failed"),
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+        finally
+        {
+            IsEnabled = true;
+            destination.IsEnabled = true;
+        }
+    }
+
     private async void DuplicateSpriteButton_Click(object sender, RoutedEventArgs e)
     {
         var selectedId = _objectSpriteId;
@@ -5558,18 +5677,23 @@ public partial class MainWindow : Window
         }
     }
 
-    private async Task ImportObdFolderAsync(IReadOnlyList<string> paths)
+    private async Task ImportObdFolderAsync(IReadOnlyList<string> paths, IReadOnlyList<DatThing>? replacementTargets = null)
     {
         var model = _datModel ?? throw new InvalidOperationException(Text("Abra um DAT primeiro.", "Open a DAT file first."));
         if (_sprStream is null || _filePath is null)
             throw new InvalidOperationException(Text("Abra também o SPR de destino.", "Open the destination SPR too."));
 
         var records = new List<(string Path, DatThing Thing, uint[] SpriteIds)>(paths.Count);
+        if (replacementTargets is not null && replacementTargets.Count != paths.Count)
+            throw new InvalidOperationException(Text("A quantidade de objetos de destino mudou.", "The destination object count changed."));
         for (var index = 0; index < paths.Count; index++)
         {
             if (index % 20 == 0)
                 StatusText.Text = Text($"Analisando OBDs {index + 1:N0}/{paths.Count:N0}…", $"Scanning OBD files {index + 1:N0}/{paths.Count:N0}…");
             var decoded = await Task.Run(() => ObdFileReader.Read(paths[index], model.VersionValue));
+            if (replacementTargets is not null && (decoded.Thing.Category != replacementTargets[index].Category
+                || !model.Things.Any(thing => thing.Category == replacementTargets[index].Category && thing.Id == replacementTargets[index].Id)))
+                throw new InvalidDataException(Text("Um objeto de destino não existe ou tem categoria incompatível.", "A destination object is missing or has an incompatible category."));
             var spriteIds = decoded.SpritePixels.Keys.Where(id => id != 0).OrderBy(id => id).ToArray();
             var spriteIdSet = spriteIds.ToHashSet();
             foreach (var frame in decoded.Thing.FrameGroups.SelectMany(group => group.Frames))
@@ -5596,7 +5720,10 @@ public partial class MainWindow : Window
         foreach (var record in records)
         {
             var category = record.Thing.Category;
-            if (!nextIds.TryGetValue(category, out var newId))
+            uint newId;
+            if (replacementTargets is not null)
+                newId = replacementTargets[additions.Count].Id;
+            else if (!nextIds.TryGetValue(category, out newId))
                 newId = GetNextDatThingId(model, category);
             if (newId > DatFileParser.MaximumThingCountPerCategory)
                 throw new InvalidOperationException(Text($"A categoria {CategoryName(category)} não tem mais IDs livres no DAT.",
@@ -5617,16 +5744,19 @@ public partial class MainWindow : Window
                     }).ToArray()
                 }).ToArray()
             };
-            if (!usedIds.Add((category, newId)))
+            if (replacementTargets is null && !usedIds.Add((category, newId)))
                 throw new InvalidOperationException(Text("Um dos novos IDs já está em uso no DAT.", "One of the new IDs is already used in the DAT."));
             _ = ValidateDatThingExchange(remapped, model, category, maximumSpriteId);
             additions.Add(remapped);
-            updatedCounts = WithDatCategoryCount(updatedCounts, category, newId);
+            if (replacementTargets is null) updatedCounts = WithDatCategoryCount(updatedCounts, category, newId);
         }
 
-        var candidate = updatedCounts with { Things = OrderDatThings(model.Things.Concat(additions)) };
+        var replacementMap = additions.ToDictionary(thing => (thing.Category, thing.Id));
+        var candidate = updatedCounts with { Things = OrderDatThings(replacementTargets is null
+            ? model.Things.Concat(additions)
+            : model.Things.Select(thing => replacementMap.GetValueOrDefault((thing.Category, thing.Id), thing))) };
         _ = DatFileWriter.Serialize(candidate);
-        _serverItemFiles?.ValidateCanAddFromDat(additions, candidate.VersionValue);
+        if (replacementTargets is null) _serverItemFiles?.ValidateCanAddFromDat(additions, candidate.VersionValue);
 
         if (spriteTotal > 0)
         {
@@ -5635,7 +5765,8 @@ public partial class MainWindow : Window
         }
 
         var itemCountBeforeOtbImport = _serverItemFiles?.ItemCount ?? 0;
-        ApplyDatThingAdditions(additions);
+        if (replacementTargets is null) ApplyDatThingAdditions(additions);
+        else ApplyDatThingBatchChanges(additions, additions[^1]);
         UpdateItemAttributeEditor();
         UpdateMetadataEditingState();
         var importedItemCount = _serverItemFiles is null ? 0 : _serverItemFiles.ItemCount - itemCountBeforeOtbImport;
@@ -5643,6 +5774,9 @@ public partial class MainWindow : Window
             : Text($" {importedItemCount:N0} item(ns) adicionados ao items.otb.", $" {importedItemCount:N0} item(s) added to items.otb.");
         StatusText.Text = Text($"{additions.Count:N0} objeto(s) importado(s); {spriteTotal:N0} sprite(s) adicionados.{otbSuffix} Salve tudo para gravar.",
             $"Imported {additions.Count:N0} object(s); added {spriteTotal:N0} sprite(s).{otbSuffix} Save all to write the changes.");
+        if (replacementTargets is not null)
+            StatusText.Text = Text($"{additions.Count:N0} objeto(s) substituído(s), mantendo os IDs DAT. Salve tudo para gravar.",
+                $"{additions.Count:N0} object(s) replaced, preserving DAT IDs. Save all to write the changes.");
     }
 
     private static IEnumerable<BitmapSource> EnumerateFolderObdSprites(
@@ -6347,6 +6481,7 @@ public partial class MainWindow : Window
         Add("Editar", "Edit", "\uE70F", () => SelectThing(thing));
         Add("Duplicar", "Duplicate", "\uE8C8", () => DatDuplicateButton_Click(this, new RoutedEventArgs()));
         Add("Substituir", "Replace", "\uE8AB", () => DatReplaceButton_Click(this, new RoutedEventArgs()));
+        Add("Substituir na outra janela", "Replace in another window", "\uE8AB", () => DatReplaceAcrossWindowsButton_Click(this, new RoutedEventArgs()));
         Add("Exportar", "Export", "\uEDE1", ExportSelectedDatThings);
         Add("Exportar objeto DAT (JSON)", "Export DAT object (JSON)", "\uE8A5", ExportSelectedDatThingsJson);
 
@@ -6808,6 +6943,7 @@ public partial class MainWindow : Window
         DatReplaceButton.IsEnabled = DatDuplicateButton.IsEnabled = DatDeleteButton.IsEnabled = hasSelectedThing;
         DatExportButton.IsEnabled = datMode;
         DatTransferButton.IsEnabled = datMode && _sprStream is not null && _filePath is not null && !_sprEditInProgress;
+        DatReplaceAcrossWindowsButton.IsEnabled = hasSelectedThing && _sprStream is not null && !_sprEditInProgress;
         UpdateSpriteActionToolbar();
     }
 
