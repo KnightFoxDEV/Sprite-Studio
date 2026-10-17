@@ -244,8 +244,9 @@ internal sealed class ServerItemFiles
         if (maxServerId == uint.MaxValue) throw new InvalidDataException("Não há mais IDs disponíveis no items.otb.");
         var newItem = OtbItem.CreateNew(group);
         var node = newItem.Node;
-        newItem.SetUInt32(ItemAttrServerId32, maxServerId + 1);
-        newItem.SetUInt32(ItemAttrClientId32, thing.Id);
+        var preserveExtendedIds = _items.Any(item => item.HasExtendedIds);
+        newItem.SetId(ItemAttrServerId32, 0x10, maxServerId + 1, preserveExtendedIds);
+        newItem.SetId(ItemAttrClientId32, 0x11, thing.Id, preserveExtendedIds);
         newItem.SetAttribute(0x20, new byte[16]);
         _root.Children.Add(node);
         _items.Add(newItem);
@@ -282,6 +283,7 @@ internal sealed class ServerItemFiles
 
     public byte[] SerializeOtb()
     {
+        foreach (var item in _items) item.NormalizeIds();
         using var stream = new MemoryStream();
         stream.Write(_fileHeader);
         WriteNode(stream, _root);
@@ -461,6 +463,13 @@ internal sealed class ServerItemFiles
         public byte Group => _group;
         public uint ServerId => ReadId(ItemAttrServerId32, 0x10);
         public uint ClientId => ReadId(ItemAttrClientId32, 0x11);
+        public bool HasExtendedIds => Attributes().Any(attribute => attribute.Id is ItemAttrServerId32 or ItemAttrClientId32);
+
+        public void NormalizeIds()
+        {
+            SetId(ItemAttrServerId32, 0x10, ServerId);
+            SetId(ItemAttrClientId32, 0x11, ClientId);
+        }
 
         public ServerItemInfo GetInfo() => new(ServerId, ClientId, ReadString(0x12), ReadU16(0x14), ReadU16(0x21),
             ReadPair(0x2A, 0), ReadPair(0x2A, 2), ReadU16(0x2D), _flags);
@@ -482,6 +491,21 @@ internal sealed class ServerItemFiles
             var bytes = new byte[4];
             BinaryPrimitives.WriteUInt32LittleEndian(bytes, value);
             return SetAttribute(id, bytes);
+        }
+
+        public bool SetId(byte extendedAttribute, byte legacyAttribute, uint value, bool preserveExtended = false)
+        {
+            var hasExtendedAttribute = preserveExtended || Attributes().Any(attribute => attribute.Id == extendedAttribute);
+            if (value <= ushort.MaxValue)
+            {
+                var changed = SetUInt16(legacyAttribute, (ushort)value);
+                if (hasExtendedAttribute) changed |= SetUInt32(extendedAttribute, value);
+                return changed;
+            }
+
+            var extendedChanged = SetAttribute(legacyAttribute, null);
+            extendedChanged |= SetUInt32(extendedAttribute, value);
+            return extendedChanged;
         }
         public bool SetByte(byte id, int value) => SetAttribute(id, value == 0 ? null : [(byte)value]);
 
